@@ -1,0 +1,6 @@
+[submodule "packages/@enmeshed/bowser"]
+	path = packages/@enmeshed/bowser
+	url = https://wcjohnson@github.com/enmeshed/bowser.git
+[submodule "packages/@enmeshed/meshnode"]
+	path = packages/@enmeshed/meshnode
+	url = https://wcjohnson@github.com/enmeshed/meshnode.git
