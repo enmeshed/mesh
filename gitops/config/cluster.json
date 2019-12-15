@@ -1,0 +1,69 @@
+{
+  "service": {
+    "apiserver": {
+      "type": "http_mesh"
+    },
+    "hello": {
+      "type": "http_mesh"
+    },
+    "goodbye": {
+      "type": "grpc_mesh",
+      "protocols": ["test.Test"]
+    },
+    "envoy_auth": {
+      "type": "grpc_direct",
+      "protocols": [
+        "envoy.service.auth.v2.Authorization"
+      ],
+      "port": 12400
+    },
+    "userauth": {
+      "type": "grpc_mesh",
+      "protocols": [
+        "mesh.auth.UserAuthService"
+      ]
+    }
+  },
+  "provider": {
+    "apiserver": {
+      "type": "mesh_node",
+      "dns": "apiserver.default.svc.cluster.local"
+    },
+    "hello": {
+      "type": "mesh_node",
+      "dns": "hello.default.svc.cluster.local"
+    },
+    "goodbye": {
+      "type": "mesh_node",
+      "dns": "goodbye.default.svc.cluster.local"
+    },
+    "userauth": {
+      "type": "mesh_node",
+      "dns": "userauth.default.svc.cluster.local"
+    }
+  },
+  "environment": {
+    "live": {
+      "service": {
+        "apiserver": {},
+        "hello": {},
+        "goodbye": {},
+        "envoy_auth": {},
+        "userauth": {}
+      },
+      "provider": {
+        "apiserver": {},
+        "hello": {},
+        "goodbye": {},
+        "userauth": {}
+      },
+      "providerMap": {
+        "apiserver": "apiserver",
+        "hello": "hello",
+        "goodbye": "goodbye",
+        "envoy_auth": "userauth",
+        "userauth": "userauth"
+      }
+    }
+  }
+}

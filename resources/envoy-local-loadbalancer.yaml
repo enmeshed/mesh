@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-load-balancer
+spec:
+  selector:
+    app: envoy-ingress
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: envoy-http
+    - protocol: TCP
+      name: admin
+      port: 9000
+      targetPort: envoy-admin
+  type: LoadBalancer

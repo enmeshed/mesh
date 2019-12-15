@@ -1,0 +1,43 @@
+newUser(req) -/>
+  {
+    id: "user_1"
+  }
+
+getUser(req) -/>
+  {
+    id: "user_1"
+  }
+
+deleteUser(req) -/>
+  {}
+
+beginSession(req) -/>
+  {
+    token: {
+      jwt: '12345'
+    }
+    initialExtensionHeader: {
+      initiator: {
+        user_id: "user_1"
+        session_id: "session_1"
+      }
+    }
+  }
+
+resumeSession(req) -/>
+  {
+    initialExtensionHeader: {
+      initiator: {
+        user_id: "user_1"
+        session_id: "session_1"
+      }
+    }
+  }
+
+export default {
+  newUser
+  getUser
+  deleteUser
+  beginSession
+  resumeSession
+}

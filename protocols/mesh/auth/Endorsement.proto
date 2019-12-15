@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+
+// Identifies the party that initiated a request to downstream services.
+message Endorsement {
+  string type = 1;
+  google.protobuf.Struct payload = 2;
+}

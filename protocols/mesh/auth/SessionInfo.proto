@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+
+message SessionInfo {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}

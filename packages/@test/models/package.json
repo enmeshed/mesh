@@ -1,0 +1,10 @@
+{
+  "name": "@test/models",
+  "version": "0.1.0",
+  "dependencies": {
+    "@enmeshed/meshnode": "^0.1.0",
+    "@ormojo/ephraim": "^0.2.8",
+    "@ormojo/ormojo": "^0.2.10",
+    "cuid": "^2.1.6"
+  }
+}

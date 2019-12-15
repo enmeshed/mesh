@@ -1,0 +1,61 @@
+import { getNode } from '@enmeshed/meshnode'
+
+cookie = require('cookie')
+
+debug = require('debug')('userauth.EnvoyAuth')
+
+extractToken(appId, headers, cookies) ->
+  if headers?.authorization:
+    zz = headers.authorization.split(' ')
+    if zz?[0] == 'Bearer':
+      return zz[1]
+
+  cookieName = `session_${appId}`
+  cookies?[cookieName]
+
+Check(req) -/>
+  node = getNode()
+  httpData = req?.attributes?.request?.http or {}
+  { headers, method, path } = httpData
+
+  debug("Check", method, path)
+  debug("Context", req.attributes?.context_extensions)
+  debug("Source", req.attributes?.source)
+  debug("Dest", req.attributes?.destination)
+  debug("Request", req.attributes?.request?.http)
+
+  cookies = if headers?.cookie:
+    cookie.parse(headers.cookie)
+  else:
+    {}
+
+  // Extract session token
+  token = extractToken(node.getConfig('APP_ID') or 'mesh', headers, cookies)
+
+  debug("Check: got token", token)
+
+  // Create initial user extension header
+  extensionHeader = node.createExtensionHeader()
+  extensionHeader.data.initiator = {
+    user_id: 'user_1'
+    session_id: 'session_1'
+    payload: {
+      token
+    }
+  }
+  headerValues = extensionHeader.toHeaderData()
+
+  newHeaders = [...for key k, val v in headerValues: [{
+    header: { key: k, value: v }
+    append: { value: false }
+  }]]
+
+  // XXX: this check always passes
+  {
+    status: { code: 0 }
+    ok_response: { headers: newHeaders }
+  }
+
+export default {
+  Check
+}

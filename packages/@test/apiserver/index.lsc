@@ -1,0 +1,26 @@
+import { MeshNode } from '@enmeshed/meshnode'
+import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
+import path from 'path'
+
+bodyParser = require('body-parser')
+
+routeContext = require.context('./routes', true)
+
+node = new MeshNode()
+ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
+node.setReflectionDataSource(ds)
+
+asyncMain() -/>
+  <- node.join(process.env.MESH_ENVIRONMENT, process.env.MESH_PROVIDER)
+
+  svc <- node.getServicePort('apiserver')
+  app = svc.getExpressApp()
+  app.use(bodyParser.json())
+
+  svc.loadRoutesFromWebpackContext(routeContext)
+  svc.start()
+
+asyncMain()
+  .catch! (err) ->
+    console.error(err)
+    process.exit(1)

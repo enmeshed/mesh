@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package test;
+
+import "google/protobuf/empty.proto";
+
+service Test {
+  rpc unary(TestMessage) returns (TestMessage);
+  rpc writeEvent(TestMessage) returns (google.protobuf.Empty);
+  rpc readEvents(google.protobuf.Empty) returns (stream TestMessage);
+}
+
+message TestMessage {
+  string message = 1;
+}

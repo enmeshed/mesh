@@ -1,0 +1,49 @@
+// Enumerate available mesh services and protocols
+import { getNode } from '@enmeshed/meshnode'
+
+isgRPCService(svc) ->
+  match svc?.type:
+    | "grpc_direct": true
+    | "grpc_mesh": true
+    | else: false
+
+export default (router) ->
+  router.async('get', '/enum/services', (req, res): void -/>
+    // Locate all GRPC services on the mesh
+    n = getNode()
+    env = n.environment
+    result = [...for elem name in env.getServiceNames():
+      svc = env.getService(name)
+      if isgRPCService(svc):
+        svcData = { name: svc.name, protocols: svc.protocols }
+        [ svcData ]
+    ]
+
+    res.status(200).json(result)
+  )
+
+  router.async('get', '/enum/methods', (req, res): void -/>
+    { service, protocol } = req.query
+    node = getNode()
+    env = node.environment
+    svc = env.getService(service)
+    if (not svc) or (not svc.protocols?.find(x -> x == protocol)):
+      // XXX: Error
+      res.status(404).send("not found")
+      return
+
+    def <- node.protos.definition(protocol)
+    result = [...for key name, val method in def.methods:
+      if (not method.requestStream) and (not method.responseStream):
+        [{
+          name
+          arity: "unary"
+        }]
+    ]
+
+    res.status(200).json(result)
+  )
+
+  router.async('post', '/invoke/unary', (req, res): void -/>
+
+  )

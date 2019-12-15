@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+
+import "mesh/auth/SessionToken.proto";
+import "mesh/auth/SessionFingerprint.proto";
+import "mesh/auth/ExtensionHeader.proto";
+import "mesh/auth/Credential.proto";
+
+service UserAuthService {
+  rpc newUser(NewUserRequest) returns (NewUserResponse);
+  rpc getUser(GetUserRequest) returns (GetUserResponse);
+  rpc deleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc beginSession(BeginSessionRequest) returns (BeginSessionResponse);
+  rpc resumeSession(ResumeSessionRequest) returns (ResumeSessionResponse);
+}
+
+message ResumeSessionRequest {
+  SessionToken token = 1;
+  SessionFingerprint fingerprint = 2;
+}
+
+message ResumeSessionResponse {
+  ExtensionHeader initialExtensionHeader = 1;
+}
+
+message BeginSessionRequest {
+  Credential credential = 1;
+  SessionFingerprint fingerprint = 2;
+  google.protobuf.Struct payload = 3;
+}
+
+message BeginSessionResponse {
+  SessionToken token = 1;
+  ExtensionHeader initialExtensionHeader = 2;
+}
+
+message NewUserRequest {
+  google.protobuf.Struct payload = 1;
+}
+
+message NewUserResponse {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {}

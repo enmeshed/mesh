@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package mesh;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+service GenericEventService {
+  rpc writeEvent(WriteEventRequest) returns (WriteEventResponse);
+  rpc readHistory(ReadHistoryRequest) returns (stream ReadHistoryResponse);
+}
+
+message WriteEventRequest {
+  GenericEvent event = 1;
+}
+
+message WriteEventResponse {}
+
+message ReadHistoryRequest {
+  EventIdentifier identifier = 1;
+}
+
+message ReadHistoryResponse {
+  repeated GenericEvent events = 1;
+}
+
+message EventIdentifier {
+  string key = 1;
+}
+
+message GenericEvent {
+  EventIdentifier identifier = 1;
+  google.protobuf.Struct payload = 2;
+}

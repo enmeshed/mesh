@@ -1,0 +1,155 @@
+{
+  "listeners": [{
+    "name": "listener_http",
+    "address": {
+      "socket_address": {
+        "address": "0.0.0.0",
+        "port_value": 3000
+      }
+    },
+    "filter_chains": [{
+      "filters": [{
+        "name": "envoy.http_connection_manager",
+        "config": {
+          "use_remote_address": true,
+          "generate_request_id": true,
+          "tracing": {},
+          "codec_type": "AUTO",
+          "stat_prefix": "http_ingress",
+          "http_filters": [
+            {
+              "name": "envoy.ext_authz",
+              "config": {
+                "grpc_service": {
+                  "envoy_grpc": {
+                    "cluster_name": "cluster_auth"
+                  }
+                },
+                "failure_mode_allow": false
+              }
+            },
+            {
+              "name": "envoy.router",
+              "config": {}
+            }
+          ],
+          "rds": {
+            "config_source": { "ads": {} },
+            "route_config_name": "route_http"
+          }
+        }
+      }]
+    }]
+  }],
+  "routes": [{
+    "name": "route_http",
+    "virtual_hosts": [{
+      "name": "vhost_all",
+      "domains": ["*"],
+      "per_filter_config": {
+        "envoy.ext_authz": {
+          "check_settings": {
+            "context_extensions": {
+              "context": "generic"
+            }
+          }
+        }
+      },
+      "routes": [
+        {
+          "name": "vroute_hello2",
+          "match": { "prefix": "/hello/" },
+          "route": { "prefix_rewrite": "/http/hello/", "cluster": "cluster_env_live_service_hello"  }
+        },
+        {
+          "name": "vroute_hello1",
+          "match": { "prefix": "/hello" },
+          "route": { "prefix_rewrite": "/http/hello/", "cluster": "cluster_env_live_service_hello" }
+        },
+        {
+          "name": "vroute_api2",
+          "match": { "prefix": "/api/" },
+          "route": { "prefix_rewrite": "/http/apiserver/", "cluster": "cluster_env_live_service_apiserver"  }
+        },
+        {
+          "name": "vroute_api1",
+          "match": { "prefix": "/api" },
+          "route": { "prefix_rewrite": "/http/apiserver/", "cluster": "cluster_env_live_service_apiserver" }
+        },
+        {
+          "name": "vroute_jaeger",
+          "match": { "prefix": "/jaeger/" },
+          "route": { "cluster": "cluster_jaeger" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "jaeger"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "vroute_jaeger1",
+          "match": { "prefix": "/jaeger" },
+          "route": { "cluster": "cluster_jaeger" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "jaeger"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }]
+  }],
+  "clusters": [
+    {
+      "name": "cluster_jaeger",
+      "connect_timeout": { "seconds": 1 },
+      "type": "STRICT_DNS",
+      "lb_policy": "ROUND_ROBIN",
+      "load_assignment": {
+        "cluster_name": "cluster_jaeger",
+        "endpoints": [{
+          "lb_endpoints": [{
+            "endpoint": {
+              "address": {
+                "socket_address": {
+                  "address": "jaeger-query.default.svc.cluster.local",
+                  "port_value": 16686
+                }
+              }
+            }
+          }]
+        }]
+      }
+    },
+    {
+      "name": "cluster_auth",
+      "connect_timeout": { "seconds": 1 },
+      "type": "STRICT_DNS",
+      "lb_policy": "ROUND_ROBIN",
+      "http2_protocol_options": {},
+      "load_assignment": {
+        "cluster_name": "cluster_auth",
+        "endpoints": [{
+          "lb_endpoints": [{
+            "endpoint": {
+              "address": {
+                "socket_address": {
+                  "address": "userauth.default.svc.cluster.local",
+                  "port_value": 12400
+                }
+              }
+            }
+          }]
+        }]
+      }
+    }
+  ]
+}

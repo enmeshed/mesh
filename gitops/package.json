@@ -1,0 +1,13 @@
+{
+  "name": "gitops",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@enmeshed/node-control-plane": "^0.2.0",
+    "@enmeshed/grpc": "^0.2.0",
+    "kafkajs": "^1.11.0",
+    "mysql2": "^1.7.0",
+    "express": "^4.17.1",
+    "jaeger-client": "^3.15.0",
+    "ioredis": "^4.14.1"
+  }
+}

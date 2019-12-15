@@ -1,0 +1,12 @@
+import { getNode } from '@enmeshed/meshnode'
+
+export default (router) ->
+  router.async('get', '/goodbye', helloWorld(req, res): void -/>
+    // Get clients for services we will need
+    n = getNode()
+    cp <- n.getClientPort('goodbye')
+    cli <- cp.clientForProtocol('test.Test')
+
+    testRes <- cli.unary({ message: 'hello from apiserver'})
+    res.send(testRes.message)
+  )
