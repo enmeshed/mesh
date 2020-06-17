@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clusterapp.envConfigMap" . }}
+  labels:
+    {{- include "clusterapp.labels" . | nindent 4 }}
+data:
+  MESH_ENVIRONMENT: {{ .Values.environment }}
+  MESH_PROVIDER: {{ .Values.provider }}
+  MESH_CONTROL_PLANE_ADDRESS: {{ .Values.controlPlaneAddress }}

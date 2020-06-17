@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+// Description of a locked object
+message LockedObject {
+  // Object ID
+  string id = 1;
+  // Object type
+  string type = 2;
+}

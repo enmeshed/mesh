@@ -1,0 +1,14 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: development
+spec:
+  version: 7.5.2
+  count: 1
+  elasticsearchRef:
+    name: es-primary
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true

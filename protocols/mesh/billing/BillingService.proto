@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package mesh.billing;
+
+import "google/protobuf/struct.proto";
+import "mesh/GenericDataSet.proto";
+
+service BillingService {
+  rpc newBillingAccount(NewBillingAccountRequest) returns (NewBillingAccountResponse);
+  rpc getBillingAccount(GetBillingAccountRequest) returns (GetBillingAccountResponse);
+  rpc setBillingAccount(SetBillingAccountRequest) returns (SetBillingAccountResponse);
+}
+
+message NewBillingAccountRequest {
+  string accountType = 1;
+  string subjectId = 2;
+  google.protobuf.Struct payload = 3;
+}
+
+message NewBillingAccountResponse {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+// Get billing account information. An id may be provided, in which case
+// the requested account is retrieved; otherwise additional payload may
+// be given to locate a relevant billing account
+message GetBillingAccountRequest {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message GetBillingAccountResponse {
+  mesh.GenericDataSet payload = 1;
+}
+
+message SetBillingAccountRequest {
+  string id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message SetBillingAccountResponse {
+  google.protobuf.Struct payload = 1;
+}

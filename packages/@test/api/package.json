@@ -1,0 +1,9 @@
+{
+  "name": "@test/api",
+  "description": "combined API endpoint worker process",
+  "version": "0.1.0",
+  "dependencies": {
+    "@enmeshed/meshnode": "^0.1.0",
+    "why-is-node-running": "^2.1.0"
+  }
+}

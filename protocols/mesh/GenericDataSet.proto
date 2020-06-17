@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mesh;
+
+import "google/protobuf/struct.proto";
+import "mesh/Pagination.proto";
+
+message GenericDataSet {
+  // Optional implementation-specific information on the type of data in
+  // the set.
+  string type = 1;
+  // REQUIRED count of items in the `items` field. Used by clients to test
+  // for set emptiness.
+  int32 item_count = 2;
+  // Items
+  repeated google.protobuf.Struct items = 3;
+
+  mesh.Pagination pagination = 4;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+import "google/protobuf/timestamp.proto";
+import "mesh/dtx/LockedObject.proto";
+import "mesh/dtx/LockSequence.proto";
+
+// Description of a remote distributed lock.
+message DistributedLock {
+  // Lock ID
+  string id = 1;
+  // Locked object identifier
+  mesh.dtx.LockedObject lockedObject = 2;
+  // Lock sequence number
+  mesh.dtx.LockSequence lockSequence = 3;
+  // Point in time when lock will timeout
+  google.protobuf.Timestamp timeout = 4;
+}

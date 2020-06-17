@@ -1,0 +1,65 @@
+import { makeCredential } from '@mesh/credential'
+
+newUser = withResources(
+  {
+    User: "models:User"
+    Credential: "models:Credential"
+  }
+  ({ User, Credential }, req) -/>
+    // Obtain data from request
+    if (not req.payload) or (not req.credential):
+      throw new errors.InvalidArgumentError("payload", "missing")
+    { credentialKey } = req.payload
+    // Verify credential key uniqueness
+    q = Credential.createQuery()
+    q.where(
+      q.And(
+        q.Eq('')
+      )
+    )
+    // Create a new user
+    // Create initial credential
+    // If requested, create associated billing account and subscription
+    {
+      id: "user_1"
+    }
+)
+
+getUser(req) -/>
+  {
+    id: "user_1"
+  }
+
+deleteUser(req) -/>
+  {}
+
+beginSession(req) -/>
+  {
+    token: {
+      jwt: '12345'
+    }
+    initialExtensionHeader: {
+      initiator: {
+        user_id: "user_1"
+        session_id: "session_1"
+      }
+    }
+  }
+
+resumeSession(req) -/>
+  {
+    initialExtensionHeader: {
+      initiator: {
+        user_id: "user_1"
+        session_id: "session_1"
+      }
+    }
+  }
+
+export default {
+  newUser
+  getUser
+  deleteUser
+  beginSession
+  resumeSession
+}

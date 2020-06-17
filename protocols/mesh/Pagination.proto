@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package mesh;
+
+import "google/protobuf/struct.proto";
+import "mesh/PaginationToken.proto";
+
+message Pagination {
+  // Max number of entries per page
+  int32 page_size = 1;
+  // Index of this page amongst pages
+  int32 page_index = 2;
+  // Total number of pages available
+  int32 total_pages = 3;
+  // Implementation-specific token to retrieve the next page
+  mesh.PaginationToken next_page_token = 4;
+}

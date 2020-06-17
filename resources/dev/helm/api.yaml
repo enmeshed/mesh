@@ -1,0 +1,25 @@
+environment: live
+provider: api
+# Bowser control plane
+controlPlaneAddress: bowser.default.svc.cluster.local
+replicaCount: 1
+
+# App volume config
+# App volume is mounted at /app in all containers
+appVolume:
+  # Type: "manual" specifies a volume via a manual K8S volume config
+  # Type: "git" automatically pulls and updates the app volume from a gitops repo
+  type: manual
+  needsNpmInstall: false
+  manualConfig:
+    hostPath:
+      path: /gitops
+
+# App container config
+appContainer:
+  image: "node:10.16.0"
+  command: ["sh", "-c"]
+  args: ['DEBUG="*" node /app/build/api.js /app']
+  resources: {}
+  # Inject ConfigMaps into the environment
+  envMaps: []

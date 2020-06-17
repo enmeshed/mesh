@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clusterapp.servicename" . }}
+  labels:
+    {{- include "clusterapp.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 4000
+      protocol: TCP
+      name: ingress
+  selector:
+    {{- include "clusterapp.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,15 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+// An offer a user can claim when subscribing or signing up
+@entity({name: "Offer", inherits: [Timestamped]}) class Offer:
+  @field(types.string) id = -> `offer_${cuid()}`
+  @field(types.date) expiration = undefined
+  // Offer type
+  @field(types.string) type = undefined
+  // Offer public details
+  @field(types.json) publicOfferDetails = undefined
+
+
+export { Offer }

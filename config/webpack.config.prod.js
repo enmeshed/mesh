@@ -22,6 +22,8 @@ const babelPreset = [
 const externalModules = {
   "@enmeshed/grpc": true,
   "@enmeshed/node-control-plane": true,
+  "@enmeshed/protobuf": true,
+  "@elastic/elasticsearch": true,
   "kafkajs": true,
   "mysql2": true,
   "mysql2/promise": true,
@@ -36,10 +38,8 @@ module.exports = {
   watch: false,
   entry: {
     'bowser': path.resolve(paths.src, '@enmeshed/bowser/src/main.lsc'),
-    'hello': path.resolve(paths.src, '@test/hello/index.lsc'),
-    'goodbye': path.resolve(paths.src, '@test/goodbye/index.lsc'),
-    'userauth': path.resolve(paths.src, '@test/userauth/index.lsc'),
-    'apiserver': path.resolve(paths.src, '@test/apiserver/index.lsc')
+    'api': path.resolve(paths.src, '@test/api/index.lsc'),
+    'worker_io': path.resolve(paths.src, '@test/worker_io/index.lsc')
   },
   devtool: 'source-map',
   output: {

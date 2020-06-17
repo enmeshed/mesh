@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: envoy-ingress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy-ingress
+  template:
+    metadata:
+      labels:
+        app: envoy-ingress
+    spec:
+      initContainers:
+      - name: setup
+        image: node:10.16.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /app
+            name: runtime
+          - mountPath: /scratch
+            name: scratch
+        env:
+          - name: MESH_ENVIRONMENT
+            value: live
+          - name: MESH_PROVIDER
+            value: ingress
+          - name: MESH_CONTROL_PLANE_ADDRESS
+            value: "bowser.default.svc.cluster.local"
+        command: ["/bin/bash", "/app/init.sh"]
+      containers:
+      - name: envoy
+        image: envoyproxy/envoy-alpine:v1.10.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 3000
+            protocol: TCP
+            name: envoy-http
+          - containerPort: 3001
+            protocol: TCP
+            name: envoy-https
+          - containerPort: 9000
+            protocol: TCP
+            name: envoy-admin
+        volumeMounts:
+          - mountPath: /app
+            name: runtime
+          - mountPath: /scratch
+            name: scratch
+        env:
+          - name: K_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: K_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        command: ["sh", "-c"]
+        args: ["envoy -l debug --component-log-level upstream:info,main:info -c /app/config/envoy-ingress.yaml --service-node ${K_POD_NAMESPACE}_${K_POD_NAME} --service-cluster default"]
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent:1.18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5775
+          name: zk-compact-trft
+          protocol: UDP
+        - containerPort: 5778
+          name: config-rest
+          protocol: TCP
+        - containerPort: 6831
+          name: jg-compact-trft
+          protocol: UDP
+        - containerPort: 6832
+          name: jg-binary-trft
+          protocol: UDP
+        - containerPort: 14271
+          name: admin-http
+          protocol: TCP
+        args:
+          - --reporter.grpc.host-port=dns:///jaeger-collector-headless.default.svc.cluster.local:14250
+          - --reporter.type=grpc
+        resources:
+          limits:
+            memory: 256M
+            cpu: 100m
+          requests:
+            memory: 50M
+            cpu: 0
+      volumes:
+      - name: runtime
+        hostPath:
+          path: /gitops
+      - name: scratch
+        emptyDir: {}

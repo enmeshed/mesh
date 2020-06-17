@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package mesh.context;
+
+import "google/protobuf/struct.proto";
+
+// A named piece of baggage carried in context.
+message ContextItem {
+  // Identify the type of baggage
+  string type = 1;
+  // Validity timestamp for cached data, such as user security info.
+  int64 valid_until = 2;
+  // Arbitrary json payload.
+  google.protobuf.Struct payload = 3;
+}

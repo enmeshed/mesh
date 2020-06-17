@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package mesh;
+
+import "google/protobuf/struct.proto";
+import "mesh/PaginationToken.proto";
+
+message GenericQuery {
+  // Query parameters
+  google.protobuf.Struct query_params = 1;
+
+  // Maximum number of results to return to the client per page
+  int32 page_size = 2;
+
+  // To resume a query from a prior page, pass in the pagination token
+  // returned by that query.
+  mesh.PaginationToken pagination_token = 3;
+}

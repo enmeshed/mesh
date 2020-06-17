@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+// Complete description of a transaction
+message DistributedTransaction {
+  // Transaction ID
+  string id = 1;
+  // Transaction state name.
+  string state = 2;
+  // Arbitrary transaction data.
+  google.protobuf.Struct data = 3;
+  // Future expiration date; transaction will be discarded if not done
+  // before this date.
+  google.protobuf.Timestamp expiry = 4;
+}

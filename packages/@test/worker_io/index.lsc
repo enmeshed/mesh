@@ -1,0 +1,43 @@
+import path from 'path'
+import { Container } from '@enmeshed/alpha'
+import { singletonProvider, Log, StdoutLogWriter } from '@enmeshed/meshnode'
+import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
+
+import EnvoyAuth from './grpc/EnvoyAuth'
+import Test from './grpc/Test'
+// import UserAuthService from './UserAuthService'
+
+import TestEvents from './events/Test'
+
+
+// Log to stdout
+Log.addWriter(new StdoutLogWriter())
+
+// Provide cluster config to node
+ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
+Container.provide(singletonProvider("node.reflectionDataSource", ds))
+
+asyncMain() -/>
+  // GRPC services
+  svcMgr <- Container.get("grpc.service.manager")
+  svcMgr.bind('envoy_auth', EnvoyAuth.bindings)
+  svcMgr.bind('goodbye', Test.bindings)
+  // svcMgr.bind('userauth', {
+  //   'mesh.auth.UserAuthService': UserAuthService
+  // })
+
+  // Event Handlers
+  events <- Container.get('events')
+  events.listenAll(TestEvents.bindings)
+
+  // Offer all bound services
+  log.trace("*************************** SVCMGR.AUTOSTART")
+  promises = svcMgr.autoStart()
+  log.trace("promises", { promises })
+  <- promises
+  log.trace("************************** SVCMGR.AUTOSTART COMPLETE")
+
+asyncMain()
+  .catch! (err) ->
+    console.error(err)
+    process.exit(1)

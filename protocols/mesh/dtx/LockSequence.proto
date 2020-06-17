@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+// Description of a lock sequence number for distributed locking
+message LockSequence {
+  uint64 sequence_number = 1;
+}

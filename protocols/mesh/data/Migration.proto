@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package mesh.data;
+
+import "google/protobuf/struct.proto";
+
+// Description of a database migration
+message Migration {
+  // Migration ID
+  string id = 1;
+  // Underlying database platform
+  string platform = 2;
+  // Migration data
+  google.protobuf.Struct migration = 3;
+  // Human-readable description
+  string description = 3;
+}

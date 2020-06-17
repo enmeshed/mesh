@@ -1,0 +1,76 @@
+import { withResources, Tracing, Origin, Protocols } from '@enmeshed/meshnode'
+
+cookie = require('cookie')
+debug = require('debug')('userauth.EnvoyAuth')
+
+Protocols.require('envoy/service/auth/v2/external_auth.proto')
+
+extractToken(appId, headers, cookies) ->
+  if headers?.authorization:
+    zz = headers.authorization.split(' ')
+    if zz?[0] == 'Bearer':
+      return zz[1]
+
+  cookieName = `session_${appId}`
+  cookies?[cookieName]
+
+Check = withResources(
+  {
+    "Config": "config"
+  }
+  ({Config}, req) -/>
+    httpData = req?.attributes?.request?.http or {}
+    { headers, method, path } = httpData
+
+    log.trace("Check", {
+      method, path
+      context: req.attributes?.context_extensions
+      source: req.attributes?.source
+      dest: req.attributes?.destination
+      http: req.attributes?.request?.http
+    })
+
+    cookies = if headers?.cookie:
+      cookie.parse(headers.cookie)
+    else:
+      {}
+
+    // Extract session token
+    token = extractToken('mesh', headers, cookies)
+
+    log.trace("Check: got token", { token })
+
+    // Create initial user security context
+    context = Context.create({
+      type: 'user'
+      items: [
+        new Tracing()
+        Origin.create({
+          userId: 'user_1'
+          sessionId: 'session_1'
+        })
+      ]
+    })
+
+
+    headerValues = {}
+    context.toHeaders(headerValues)
+    newHeaders = [...for key k, val v in headerValues: [{
+      header: { key: k, value: v }
+      append: { value: false }
+    }]]
+
+    // XXX: this check always passes
+    {
+      status: { code: 0 }
+      ok_response: { headers: newHeaders }
+    }
+)
+
+export default {
+  bindings: {
+    'envoy.service.auth.v2.Authorization': {
+      Check
+    }
+  }
+}

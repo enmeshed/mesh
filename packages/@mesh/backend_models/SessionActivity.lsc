@@ -1,0 +1,16 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "SessionActivity", inherits: [Timestamped]}) class SessionActivity:
+  @field(types.string) id = -> `sessionActivity_${cuid()}`
+  // Associated session
+  @field(types.string) sessionId = undefined
+  // Associated user
+  @field(types.string) userId = undefined
+  // Geospatial point of activity
+  @field(types.point) originatingPoint = undefined
+  // Device fingerprinting info
+  @field(types.json) fingerprint = undefined
+
+export { SessionActivity }

@@ -1,7 +1,0 @@
-{
-  "name": "@test/hello",
-  "version": "0.1.0",
-  "dependencies": {
-    "@enmeshed/meshnode": "^0.1.0"
-  }
-}

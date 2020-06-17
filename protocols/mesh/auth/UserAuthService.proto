@@ -15,7 +15,16 @@ service UserAuthService {
   rpc deleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc beginSession(BeginSessionRequest) returns (BeginSessionResponse);
   rpc resumeSession(ResumeSessionRequest) returns (ResumeSessionResponse);
+  // Mark a session as being active
+  rpc markSession(MarkSessionRequest) returns (MarkSessionResponse);
 }
+
+message MarkSessionRequest {
+  SessionToken token = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message MarkSessionResponse {}
 
 message ResumeSessionRequest {
   SessionToken token = 1;
@@ -38,7 +47,8 @@ message BeginSessionResponse {
 }
 
 message NewUserRequest {
-  google.protobuf.Struct payload = 1;
+  Credential credential = 1;
+  google.protobuf.Struct payload = 2;
 }
 
 message NewUserResponse {

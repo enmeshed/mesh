@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package mesh.data;
+
+import "google/protobuf/struct.proto";
+import "mesh/data/Migration.proto";
+
+// Manage extant distributed transactions
+service DataManagementService {
+  // Enumerate required data migrations
+  rpc getMigrations(GetMigrationsRequest) returns (GetMigrationsResponse);
+
+  // Execute data migrations
+  rpc doMigrations(DoMigrationsRequest) returns (DoMigrationsResponse);
+}
+
+message GetMigrationsRequest {
+}
+
+message GetMigrationsResponse {
+  repeated mesh.data.Migration migrations = 1;
+}
+
+message DoMigrationsRequest {
+  // Which migrations to perform? Empty list implies all outstanding migrations
+  repeated mesh.data.Migration migrations = 1;
+}
+
+message DoMigrationsResponse {
+}

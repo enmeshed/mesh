@@ -1,0 +1,15 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+
+import * as BaseModels from '@mesh/models'
+
+@entity({name: "BillingAccount", inherits: [Timestamped]}) class BillingAccount extends BaseModels.BillingAccount:
+  // Entity who owns the billing account (user, web property, etc)
+  @field(types.string) subjectId = undefined
+  // Billing contact user ID
+  @field(types.string) billingContactUserId = undefined
+
+  // Key associating payment processor account with this account
+  @field(types.string) paymentProcessorKey = undefined
+
+export { BillingAccount }

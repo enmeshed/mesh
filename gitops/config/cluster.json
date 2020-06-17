@@ -1,9 +1,18 @@
 {
   "service": {
-    "apiserver": {
-      "type": "http_mesh"
+    "elasticsearch": {
+      "type": "elasticsearch"
     },
-    "hello": {
+    "mysql": {
+      "type": "mysql"
+    },
+    "redis": {
+      "type": "redis"
+    },
+    "kafka": {
+      "type": "kafka"
+    },
+    "api": {
       "type": "http_mesh"
     },
     "goodbye": {
@@ -25,44 +34,66 @@
     }
   },
   "provider": {
-    "apiserver": {
+    "api": {
       "type": "mesh_node",
-      "dns": "apiserver.default.svc.cluster.local"
+      "dns": "api.development.svc.cluster.local"
     },
-    "hello": {
+    "worker-io": {
       "type": "mesh_node",
-      "dns": "hello.default.svc.cluster.local"
+      "dns": "worker-io.development.svc.cluster.local"
     },
-    "goodbye": {
-      "type": "mesh_node",
-      "dns": "goodbye.default.svc.cluster.local"
+    "kafka_development": {
+      "type": "kafka",
+      "brokers": ["kafka-kafka-brokers.development.svc.cluster.local:9092"]
     },
-    "userauth": {
-      "type": "mesh_node",
-      "dns": "userauth.default.svc.cluster.local"
+    "redis_development": {
+      "type": "redis",
+      "host": "redis.development.svc.cluster.local",
+      "port": 6379,
+      "db": 0
+    },
+    "mysql_development": {
+      "type": "mysql",
+      "host": "mysql.development.svc.cluster.local",
+      "port": 3306,
+      "database": "app",
+      "user": "app",
+      "passwordSecretId": "MYSQL_PASSWORD"
+    },
+    "elasticsearch_development": {
+      "type": "elasticsearch",
+      "nodes": ["http://es-primary-es-http.development.svc.cluster.local:9200"]
     }
   },
   "environment": {
     "live": {
       "service": {
-        "apiserver": {},
-        "hello": {},
+        "api": {},
         "goodbye": {},
         "envoy_auth": {},
-        "userauth": {}
+        "userauth": {},
+        "kafka": {},
+        "redis": {},
+        "mysql": {},
+        "elasticsearch": {}
       },
       "provider": {
-        "apiserver": {},
-        "hello": {},
-        "goodbye": {},
-        "userauth": {}
+        "api": {},
+        "worker-io": {},
+        "kafka_development": {},
+        "mysql_development": {},
+        "elasticsearch_development": {},
+        "redis_development": {}
       },
       "providerMap": {
-        "apiserver": "apiserver",
-        "hello": "hello",
-        "goodbye": "goodbye",
-        "envoy_auth": "userauth",
-        "userauth": "userauth"
+        "api": "api",
+        "envoy_auth": "worker-io",
+        "userauth": "worker-io",
+        "goodbye": "worker-io",
+        "kafka": "kafka_development",
+        "mysql": "mysql_development",
+        "redis": "redis_development",
+        "elasticsearch": "elasticsearch_development"
       }
     }
   }

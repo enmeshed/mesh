@@ -1,0 +1,99 @@
+# Default values for clusterapp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+environment: live
+provider: goodbye
+# Bowser control plane
+controlPlaneAddress: bowser.default.svc.cluster.local
+replicaCount: 1
+
+# App volume config
+# App volume is mounted at /app in all containers
+appVolume:
+  # Type: "manual" specifies a volume via a manual K8S volume config
+  # Type: "git" automatically pulls and updates the app volume from a gitops repo
+  type: manual
+  needsNpmInstall: false
+  manualConfig:
+    hostPath:
+      path: /Users/wcj/dev/mesh/gitops
+
+# App container config
+appContainer:
+  image: "node:10.16.0"
+  command: ["sh", "-c"]
+  args: ['DEBUG="*" node /app/build/goodbye.js /app']
+  resources: {}
+  # Inject ConfigMaps into the environment
+  envMaps: []
+
+# Sidecar configs
+envoy:
+  image: "envoyproxy/envoy-alpine:v1.10.0"
+  # Envoy "service-cluster" CLI variable value
+  serviceCluster: default
+  # Tracing config
+  tracing:
+    # Jaeger plugin URL
+    pluginUrl: "https://github.com/jaegertracing/jaeger-client-cpp/releases/download/v0.4.2/libjaegertracing_plugin.linux_amd64.so"
+    sampler:
+      type: remote
+      param: 1
+  resources:
+    limits:
+      memory: 256M
+      cpu: 200m
+    requests:
+      memory: 50M
+      cpu: 0
+
+jaeger:
+  image: "jaegertracing/jaeger-agent:1.18"
+  # Primary collector host:port within the cluster
+  collector: "jaeger-collector-headless.default.svc.cluster.local:14250"
+  resources:
+    limits:
+      memory: 256M
+      cpu: 100m
+    requests:
+      memory: 50M
+      cpu: 0
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

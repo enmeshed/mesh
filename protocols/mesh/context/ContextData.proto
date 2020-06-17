@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package mesh.context;
+
+import "google/protobuf/struct.proto";
+import "mesh/context/ContextItem.proto";
+
+// Packet carrying data about the context of an operation.
+message ContextData {
+  // Context type
+  string type = 1;
+  // Context data
+  repeated mesh.context.ContextItem items = 2;
+  // Parent context
+  mesh.context.ContextData parent = 3;
+  // Relationship with parent context
+  string parent_relationship = 4;
+}

@@ -1,0 +1,14 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+
+import * as BaseModels from '@mesh/models'
+
+@entity({name: "Subscription", inherits: [Timestamped]}) class Subscription extends BaseModels.Subscription:
+  // Billing account that owns this subscription
+  @field(types.string) billingAccountId = undefined
+
+  // Key associating payment processor account with this subscription
+  @field(types.string) paymentProcessorKey = undefined
+
+
+export { Subscription }

@@ -1,0 +1,15 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "Session", inherits: [Timestamped]}) class Session:
+  @field(types.string) id = -> `session_${cuid()}`
+  // Session expiry type
+  @field(types.date) expiration = undefined
+  // Property ID for session, when user has access to multiple distinct
+  // web properties
+  @field(types.string) propertyId = undefined
+  // Geospatial point of session creation
+  @field(types.point) originatingPoint = undefined
+
+export { Session }

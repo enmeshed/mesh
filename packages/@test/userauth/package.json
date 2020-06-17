@@ -1,9 +1,0 @@
-{
-  "name": "@test/userauth",
-  "description": "User authorization microservice",
-  "version": "0.1.0",
-  "dependencies": {
-    "@enmeshed/meshnode": "^0.1.0",
-    "cookie": "^0.4.0"
-  }
-}

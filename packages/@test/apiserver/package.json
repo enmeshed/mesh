@@ -1,8 +1,0 @@
-{
-  "name": "@test/apiserver",
-  "description": "Outward-facing HTTP JSON API server",
-  "version": "0.1.0",
-  "dependencies": {
-    "@enmeshed/meshnode": "^0.1.0"
-  }
-}

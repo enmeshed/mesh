@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+import "google/protobuf/duration.proto";
+import "mesh/GenericQuery.proto";
+import "mesh/GenericDataSet.proto";
+import "mesh/PaginationToken.proto";
+
+// Manage extant distributed transactions
+service DistributedTransactionManagementService {
+  // Enumerate matching distributed transactions
+  rpc getDistributedTransactions(GetDistributedTransactionsRequest) returns (GetDistributedTransactionsResponse);
+
+  // Delete matching distributed transactions
+  rpc deleteDistributedTransactions(DeleteDistributedTransactionsRequest) returns (DeleteDistributedTransactionsResponse);
+}
+
+message GetDistributedTransactionsRequest {
+  mesh.GenericQuery query = 1;
+}
+
+message GetDistributedTransactionsResponse {
+  mesh.GenericDataSet results = 1;
+}
+
+message DeleteDistributedTransactionsRequest {
+  // Type of transactions to delete
+  mesh.GenericQuery query = 1;
+}
+
+message DeleteDistributedTransactionsResponse {
+  // Number of matching transactions deleted
+  int32 number_deleted = 1;
+}

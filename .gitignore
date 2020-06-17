@@ -1,3 +1,5 @@
 /node_modules
 /gitops/build
 /gitops/node_modules
+/gitops/protocols
+.DS_Store

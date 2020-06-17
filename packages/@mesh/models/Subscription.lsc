@@ -1,0 +1,29 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "Subscription", inherits: [Timestamped]}) class Subscription:
+  @field(types.string) id = -> `subscription_${cuid()}`
+
+  // Subscription type
+  @field(types.string) type = "none"
+  // Subscription expiry
+  @field(types.date) expiration = undefined
+  // Subscription privileges
+  @field(types.json) privileges = undefined
+
+  // Referral information
+  // Referer who sent us this Subscription
+  @field(types.string) referralCode = undefined
+  // Campaign that sent us this Subscription
+  @field(types.string) campaignCode = undefined
+  // Promotional offer ID if any
+  @field(types.string) offerId = undefined
+
+  // Payment processor type
+  @field(types.string) paymentProcessor = undefined
+  // Anonymized payment info for user reference (e.g. last 4 card digits only)
+  @field(types.json) anonymizedPaymentInfo = undefined
+
+
+export { Subscription }

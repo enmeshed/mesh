@@ -1,0 +1,26 @@
+apiVersion: kubedb.com/v1alpha1
+kind: MySQL
+metadata:
+  name: mysql
+  namespace: development
+spec:
+  version: "5.7-v2"
+  storageType: "Durable"
+  storage:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+  podTemplate:
+    spec:
+      args:
+      - --character-set-server=utf8mb4
+      - --default-time-zone=+00:00
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"

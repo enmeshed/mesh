@@ -57,24 +57,14 @@
       },
       "routes": [
         {
-          "name": "vroute_hello2",
-          "match": { "prefix": "/hello/" },
-          "route": { "prefix_rewrite": "/http/hello/", "cluster": "cluster_env_live_service_hello"  }
-        },
-        {
-          "name": "vroute_hello1",
-          "match": { "prefix": "/hello" },
-          "route": { "prefix_rewrite": "/http/hello/", "cluster": "cluster_env_live_service_hello" }
-        },
-        {
           "name": "vroute_api2",
           "match": { "prefix": "/api/" },
-          "route": { "prefix_rewrite": "/http/apiserver/", "cluster": "cluster_env_live_service_apiserver"  }
+          "route": { "prefix_rewrite": "/http/api/", "cluster": "cluster_env_live_service_api"  }
         },
         {
           "name": "vroute_api1",
           "match": { "prefix": "/api" },
-          "route": { "prefix_rewrite": "/http/apiserver/", "cluster": "cluster_env_live_service_apiserver" }
+          "route": { "prefix_rewrite": "/http/api/", "cluster": "cluster_env_live_service_api" }
         },
         {
           "name": "vroute_jaeger",
@@ -142,7 +132,7 @@
             "endpoint": {
               "address": {
                 "socket_address": {
-                  "address": "userauth.default.svc.cluster.local",
+                  "address": "worker-io.development.svc.cluster.local",
                   "port_value": 12400
                 }
               }

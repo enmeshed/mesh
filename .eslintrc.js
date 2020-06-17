@@ -11,5 +11,14 @@ module.exports = {
   "env": {
     "node": true,
     "es6": true
+  },
+  "rules": {
+    "no-this-before-super": 0,
+    "constructor-super": 0,
+    "no-unreachable": 0
+  },
+  "globals": {
+    "log": true,
+    "Context": true
   }
 }

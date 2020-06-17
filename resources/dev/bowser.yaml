@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: bowser
+spec:
+  selector:
+    app: bowser
+  type: ClusterIP
+  clusterIP: None # headless
+  ports:
+  - name: server
+    protocol: TCP
+    port: 12000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bowser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bowser
+  template:
+    metadata:
+      labels:
+        app: bowser
+    spec:
+      initContainers:
+      - name: setup
+        image: node:10.16.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /app
+            name: runtime
+          - mountPath: /scratch
+            name: scratch
+        command: ["/bin/bash", "/app/init.sh"]
+      containers:
+      - name: service
+        image: node:10.16.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 12000
+            protocol: TCP
+            name: grpc-service
+        volumeMounts:
+          - mountPath: /app
+            name: runtime
+          - mountPath: /scratch
+            name: scratch
+        command: ["sh", "-c"]
+        args: ['DEBUG="*" node /app/build/bowser.js /app/config/cluster.json /app/config/ingress.json']
+        # readinessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:8081"]
+        #   initialDelaySeconds: 1
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:8081"]
+        #   initialDelaySeconds: 1
+      volumes:
+      - name: runtime
+        hostPath:
+          path: /gitops
+      - name: scratch
+        emptyDir: {}

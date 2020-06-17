@@ -1,0 +1,23 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "BillingAccount", inherits: [Timestamped]}) class BillingAccount:
+  @field(types.string) id = -> `billingAccount_${cuid()}`
+
+  // Billing account type. (Single-user, team, etc)
+  @field(types.string) accountType = 'user'
+
+  // Referral information
+  // Referer who sent us this BillingAccount
+  @field(types.string) referralCode = undefined
+  // Campaign that sent us this BillingAccount
+  @field(types.string) campaignCode = undefined
+  // INITIAL offer taken at signup
+  @field(types.string) initialOfferId = undefined
+
+  // Payment processor type
+  @field(types.string) paymentProcessor = undefined
+
+
+export { BillingAccount }

@@ -1,0 +1,16 @@
+import { withResources } from '@enmeshed/meshnode'
+
+
+TestEventHandler = withResources(
+  {}
+  TestEventHandler(deps, data) -/> {
+    log.trace("TestEventHandler is running", { data })
+  } // TestEventHandler
+)
+
+
+export default {
+  bindings: {
+    "system.test": TestEventHandler
+  }
+}

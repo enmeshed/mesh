@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package mesh;
+
+import "google/protobuf/any.proto";
+
+message PaginationToken {
+  string token_type = 1;
+  string token_payload = 2;
+}

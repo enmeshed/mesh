@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "clusterapp.releasename" . }}
+  labels:
+    {{- include "clusterapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "clusterapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "clusterapp.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: service
+          image: {{ .Values.appContainer.image | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.appContainer.resources }}
+          resources:
+            {{- toYaml .Values.appContainer.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /app
+              name: runtime
+            - mountPath: /scratch
+              name: scratch
+          envFrom:
+            - configMapRef:
+                name: {{ include "clusterapp.envConfigMap" . }}
+            {{- range .Values.appContainer.envMaps }}
+            - configMapRef:
+                name: {{ . }}
+            {{- end }}
+          command:
+            {{- range .Values.appContainer.command }}
+            - {{ . | quote }}
+            {{- end }}
+          args:
+            {{- range .Values.appContainer.args }}
+            - {{ . | quote }}
+            {{- end }}
+        - name: envoy
+          image: {{ .Values.envoy.image | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.envoy.resources }}
+          resources:
+            {{- toYaml .Values.envoy.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /scratch
+              name: scratch
+            - mountPath: /config
+              name: config
+          command: ["sh"]
+          args: ["/config/envoyBootstrap"]
+        - name: jaeger-agent
+          image: {{ .Values.jaeger.image | quote }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.jaeger.resources }}
+          resources:
+            {{- toYaml .Values.jaeger.resources | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 5775
+              name: zk-compact-trft
+              protocol: UDP
+            - containerPort: 5778
+              name: config-rest
+              protocol: TCP
+            - containerPort: 6831
+              name: jg-compact-trft
+              protocol: UDP
+            - containerPort: 6832
+              name: jg-binary-trft
+              protocol: UDP
+            - containerPort: 14271
+              name: admin-http
+              protocol: TCP
+          args:
+            - --reporter.grpc.host-port=dns:///{{ .Values.jaeger.collector }}
+            - --reporter.type=grpc
+      volumes:
+        - name: runtime
+          {{- if eq .Values.appVolume.type "manual" }}
+          {{- toYaml .Values.appVolume.manualConfig | nindent 10 }}
+          {{- end }}
+        - name: scratch
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ include "clusterapp.volumeConfigMap" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

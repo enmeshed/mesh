@@ -1,0 +1,12 @@
+import { withResources } from '@enmeshed/meshnode'
+
+export default (router) ->
+  router.async('get', '/', withResources(
+    {
+      "goodbye": "grpc.client.protocol:test.Test"
+    }
+    helloWorld({goodbye}, req, res): void -/>
+      message = if req.query.fail: 'fail' else: 'hello'
+      testRes <- goodbye.unary({ message })
+      res.send(testRes.message)
+  ))

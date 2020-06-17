@@ -1,0 +1,18 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "User", inherits: [Timestamped]}) class User:
+  @field(types.string) id = -> `user_${cuid()}`
+  @field(types.string) email = undefined
+  @field(types.string) fullName = undefined
+
+  @field(types.boolean) isEmailConfirmed = false
+
+  @field(types.string) state = 'inactive'
+  // For systems that span multiple web properties, the property originally
+  // associated with this account.
+  @field(types.string) basePropertyId = undefined
+
+
+export { User }

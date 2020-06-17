@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+import "google/protobuf/duration.proto";
+import "mesh/dtx/DistributedTransaction.proto";
+
+service DistributedTransactionService {
+  // Begin a distributed transaction, creating a new tx record and automatically
+  // acquiring a lock on the transaction.
+  rpc beginDistributedTransaction(BeginDistributedTransactionRequest) returns (BeginDistributedTransactionResponse);
+
+  // Resume a distributed transaction if it is in a particular state and
+  // is not already locked. Request fails if state doesn't match or
+  // transaction is already locked.
+  rpc resumeDistributedTransaction(ResumeDistributedTransactionRequest) returns (ResumeDistributedTransactionResponse);
+
+  // Update a distributed transaction to which you currently hold the
+  // lock.
+  rpc updateDistributedTransaction(UpdateDistributedTransactionRequest) returns (UpdateDistributedTransactionResponse);
+
+  // Release a lock acquired with begin or resume.
+  rpc releaseDistributedTransaction(ReleaseDistributedTransactionRequest) returns (ReleaseDistributedTransactionResponse);
+}
+
+message BeginDistributedTransactionRequest {
+  // Initial values of the transaction
+  mesh.dtx.DistributedTransaction initial = 1;
+  // Desired lock timeout
+  google.protobuf.Duration lockTimeout = 2;
+}
+
+message BeginDistributedTransactionResponse {
+  mesh.dtx.DistributedTransaction transaction = 1;
+  mesh.dtx.DistributedLock lock = 2;
+}
+
+message ResumeDistributedTransactionRequest {
+  // ID of transaction created with beginDistributedTransaction
+  string id = 1;
+  // Expected state for transaction. If the transaction is not in this state
+  // it will not be resumed.
+  string expectedState = 2;
+  // Desired lock timeout
+  google.protobuf.Duration lockTimeout = 2;
+}
+
+message ResumeDistributedTransactionResponse {
+  mesh.dtx.DistributedTransaction transaction = 1;
+  mesh.dtx.DistributedLock lock = 2;
+}
+
+message UpdateDistributedTransactionRequest {
+  // Transaction data
+  mesh.dtx.DistributedTransaction transaction = 1;
+  // Lock info returned by the begin/resume that acquired the lock
+  mesh.dtx.DistributedLock lock = 2;
+}
+
+message UpdateDistributedTransactionResponse {
+  // Transaction data after update
+  mesh.dtx.DistributedTransaction transaction = 1;
+}
+
+message ReleaseDistributedTransactionRequest {
+  // Lock returned by begin/resume
+  mesh.dtx.DistributedLock lock = 1;
+}
+
+message ReleaseDistributedTransactionResponse {
+  // Empty response
+}

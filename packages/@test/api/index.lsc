@@ -1,0 +1,26 @@
+import { Container } from '@enmeshed/alpha'
+import { singletonProvider, Log, StdoutLogWriter, loadRoutesFromWebpackContext } from '@enmeshed/meshnode'
+import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
+import path from 'path'
+
+routeContext = require.context('./routes', true)
+
+// Log to stdout
+Log.addWriter(new StdoutLogWriter())
+
+// Provide cluster config to node
+ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
+Container.provide(singletonProvider("node.reflectionDataSource", ds))
+
+bindings(router) -/>
+  loadRoutesFromWebpackContext(routeContext, router)
+
+asyncMain() -/>
+  svcMgr <- Container.get("http.service.manager")
+  svcMgr.bind('api', bindings)
+  <- svcMgr.autoStart()
+
+asyncMain()
+  .catch! (err) ->
+    console.error(err)
+    process.exit(1)

@@ -1,0 +1,68 @@
+// Bind all backend models to drivers
+import { ModelManager } from '@enmeshed/meshnode'
+
+import { User } from '@mesh/models'
+
+import { Credential } from './Credential'
+import { BillingAccount } from './BillingAccount'
+import { Subscription } from './Subscription'
+import { Session } from './Session'
+import { SessionActivity } from './SessionActivity'
+
+ModelManager.bind(User, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['email'], unique: true }
+    ]
+  }
+})
+
+ModelManager.bind(Credential, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['credentialKey'], unique: true }
+    ]
+  }
+})
+
+ModelManager.bind(BillingAccount, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['subjectId', 'accountType'], unique: true }
+      { columnNames: ['paymentProcessor', 'paymentProcessorKey'] }
+    ]
+  }
+})
+
+ModelManager.bind(Subscription, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['billingAccountId'] }
+      { columnNames: ['paymentProcessor', 'paymentProcessorKey'] }
+    ]
+  }
+})
+
+ModelManager.bind(Session, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['userId'] }
+      { columnNames: ['propertyId'] }
+    ]
+  }
+})
+
+ModelManager.bind(SessionActivity, {
+  backend: 'mysql'
+  bindings: {
+    indices: [
+      { columnNames: ['userId'] }
+      { columnNames: ['sessionId'] }
+    ]
+  }
+})
