@@ -6,7 +6,6 @@ import "google/protobuf/struct.proto";
 
 import "mesh/auth/SessionToken.proto";
 import "mesh/auth/SessionFingerprint.proto";
-import "mesh/auth/ExtensionHeader.proto";
 import "mesh/auth/Credential.proto";
 
 service UserAuthService {
@@ -32,18 +31,17 @@ message ResumeSessionRequest {
 }
 
 message ResumeSessionResponse {
-  ExtensionHeader initialExtensionHeader = 1;
 }
 
 message BeginSessionRequest {
   Credential credential = 1;
   SessionFingerprint fingerprint = 2;
   google.protobuf.Struct payload = 3;
+  bool shallIssue = 4;
 }
 
 message BeginSessionResponse {
   SessionToken token = 1;
-  ExtensionHeader initialExtensionHeader = 2;
 }
 
 message NewUserRequest {

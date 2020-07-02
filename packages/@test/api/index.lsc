@@ -3,6 +3,8 @@ import { singletonProvider, Log, StdoutLogWriter, loadRoutesFromWebpackContext }
 import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
 import path from 'path'
 
+express = require('express')
+
 routeContext = require.context('./routes', true)
 
 // Log to stdout
@@ -13,6 +15,7 @@ ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
 Container.provide(singletonProvider("node.reflectionDataSource", ds))
 
 bindings(router) -/>
+  router.use(express.json())
   loadRoutesFromWebpackContext(routeContext, router)
 
 asyncMain() -/>

@@ -19,7 +19,7 @@ appVolume:
 appContainer:
   image: "node:10.16.0"
   command: ["sh", "-c"]
-  args: ['DEBUG="*" node /app/build/worker_io.js /app']
+  args: ['DEBUG="*,-ioredis:*" node /app/build/worker_io.js /app']
   resources: {}
-  # Inject ConfigMaps into the environment
   envMaps: []
+  envSecrets: ["injected-secrets"]

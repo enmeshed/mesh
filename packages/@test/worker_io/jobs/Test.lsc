@@ -1,0 +1,21 @@
+import { Job, withResources } from '@enmeshed/meshnode'
+
+export class TestJob extends Job:
+  static queueName = "job.test"
+
+  constructor(message) ->
+    super()
+    this.data.message = message
+
+TestJobHandler = withResources(
+  {}
+  TestJobHandler(deps, job: TestJob) -/> {
+    log.trace("TestJobHandler is running", { data: job.getData() })
+  } // TestJobHandler
+)
+
+export default {
+  bindings: [
+    [TestJob, TestJobHandler]
+  ]
+}

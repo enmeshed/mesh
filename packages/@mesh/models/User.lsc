@@ -9,7 +9,6 @@ import cuid from 'cuid'
 
   @field(types.boolean) isEmailConfirmed = false
 
-  @field(types.string) state = 'inactive'
   // For systems that span multiple web properties, the property originally
   // associated with this account.
   @field(types.string) basePropertyId = undefined

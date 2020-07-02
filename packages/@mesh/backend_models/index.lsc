@@ -1,1 +1,1 @@
-import './bindings'
+export { bindings } from './bindings'

@@ -1,0 +1,31 @@
+import { withResources, fieldChecks } from '@enmeshed/meshnode'
+
+getMigrations = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.data.DataManagementService"
+  }
+  getMigrations({svc}, req, res): void -/> {
+    migrations <- svc.getMigrations({})
+    res.json(migrations)
+  } // getMigrations
+)
+
+doMigrations = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.data.DataManagementService"
+  }
+  doMigrations({svc}, req, res): void -/> {
+    fieldChecks.check(
+      req.body
+      fieldChecks.checkStringArray("ids", false)
+    )
+    ids = req.body.ids
+
+    <- svc.doMigrations({migrations: ids})
+    res.json({})
+  } // getMigrations
+)
+
+export default (router) ->
+  router.async('get', '/migrations', getMigrations)
+  router.async('post', '/migrations/execute', doMigrations)

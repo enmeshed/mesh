@@ -11,8 +11,6 @@ import cuid from 'cuid'
   // Referral information
   // Referer who sent us this BillingAccount
   @field(types.string) referralCode = undefined
-  // Campaign that sent us this BillingAccount
-  @field(types.string) campaignCode = undefined
   // INITIAL offer taken at signup
   @field(types.string) initialOfferId = undefined
 

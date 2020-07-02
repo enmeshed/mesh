@@ -1,0 +1,25 @@
+import { entity, field, types } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+@entity({name: "GeneralActivity", inherits: [Timestamped]}) class GeneralActivity:
+  @field(types.string) id = -> `activity_${cuid()}`
+  // Activity subject
+  @field(types.string) subjectType = undefined
+  @field(types.string) subjectId = undefined
+  // Activity verb
+  @field(types.string) verb = undefined
+  // Activity object
+  @field(types.string) objectType = undefined
+  @field(types.string) objectId = undefined
+  // Generic message
+  @field(types.text) message = undefined
+  // Location data
+  @field(types.ip) ip = undefined
+  @field(types.object) geoip = undefined
+  @field(types.point) center = undefined
+  @field(types.number) radius = undefined
+  // Extra data
+  @field(types.object) extra = undefined
+
+export { GeneralActivity }

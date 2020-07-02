@@ -22,8 +22,9 @@ message GetMigrationsResponse {
 }
 
 message DoMigrationsRequest {
-  // Which migrations to perform? Empty list implies all outstanding migrations
-  repeated mesh.data.Migration migrations = 1;
+  // Which migrations to perform?
+  // List must consist of IDs returned from getMigrations
+  repeated string migrations = 1;
 }
 
 message DoMigrationsResponse {

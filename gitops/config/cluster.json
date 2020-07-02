@@ -31,6 +31,12 @@
       "protocols": [
         "mesh.auth.UserAuthService"
       ]
+    },
+    "data_management": {
+      "type": "grpc_mesh",
+      "protocols": [
+        "mesh.data.DataManagementService"
+      ]
     }
   },
   "provider": {
@@ -62,7 +68,9 @@
     },
     "elasticsearch_development": {
       "type": "elasticsearch",
-      "nodes": ["http://es-primary-es-http.development.svc.cluster.local:9200"]
+      "nodes": ["https://es-primary-es-http.development.svc.cluster.local:9200"],
+      "user": "app",
+      "passwordSecretId": "ELASTICSEARCH_PASSWORD"
     }
   },
   "environment": {
@@ -75,7 +83,8 @@
         "kafka": {},
         "redis": {},
         "mysql": {},
-        "elasticsearch": {}
+        "elasticsearch": {},
+        "data_management": {}
       },
       "provider": {
         "api": {},
@@ -88,8 +97,8 @@
       "providerMap": {
         "api": "api",
         "envoy_auth": "worker-io",
-        "userauth": "worker-io",
         "goodbye": "worker-io",
+        "data_management": "worker-io",
         "kafka": "kafka_development",
         "mysql": "mysql_development",
         "redis": "redis_development",

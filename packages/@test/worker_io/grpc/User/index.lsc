@@ -1,28 +1,72 @@
-import { makeCredential } from '@mesh/credential'
+import { errors } from '@enmeshed/errors'
+import { Protocols, withResources, fieldChecks } from '@enmeshed/meshnode'
+import { makeCredential, checkCredential } from '@mesh/credential'
+
+{ check, checkObject, checkString, checkEmail } = fieldChecks
+
+Protocols.require('mesh/auth/UserAuthService.proto')
 
 newUser = withResources(
   {
+    events: 'events'
     User: "models:User"
     Credential: "models:Credential"
   }
-  ({ User, Credential }, req) -/>
+  newUser({User, Credential}, req) -/> {
     // Obtain data from request
-    if (not req.payload) or (not req.credential):
-      throw new errors.InvalidArgumentError("payload", "missing")
-    { credentialKey } = req.payload
+    check(
+      req
+      checkObject(
+        'credential'
+        false
+        checkEmail("identification", false)
+        checkString("password", false, 64, 8)
+      )
+      checkObject(
+        'payload'
+        false
+        checkString("fullName", false, 1024, 4)
+      )
+    )
+
+    let { credential: { identification: email, password }, payload: { fullName, createBillingAccount, referralCode, offerCode, propertyId } } = req
+    now email = email.toLowerCase()
+
+    log.info("new user:", { email, fullName })
+
     // Verify credential key uniqueness
     q = Credential.createQuery()
     q.where(
       q.And(
-        q.Eq('')
+        q.Eq('credentialKey', email)
       )
     )
-    // Create a new user
-    // Create initial credential
-    // If requested, create associated billing account and subscription
+    res <- Credential.find(q)
+    if not res.isEmpty():
+      throw new errors.AlreadyExistsError('credential', email)
+
+    // Create new user
+    user <- User.create({
+      email
+      fullName
+      basePropertyId: propertyId
+    })
+
+    // Create associated credential
+    cred <- makeCredential('email_and_password', { email, plaintextSecret: password })
+    cred.UserId = user.id
+
+    <- Credential.create(cred)
+
     {
-      id: "user_1"
+      id: user.id
+      payload: {
+        email
+        fullName
+      }
     }
+
+  } // newUser
 )
 
 getUser(req) -/>
@@ -33,33 +77,92 @@ getUser(req) -/>
 deleteUser(req) -/>
   {}
 
-beginSession(req) -/>
+beginSession = withResources(
   {
-    token: {
-      jwt: '12345'
-    }
-    initialExtensionHeader: {
-      initiator: {
-        user_id: "user_1"
-        session_id: "session_1"
+    User: "models:User"
+    Credential: "models:Credential"
+    Session: "models:Session"
+    Config: 'config'
+  }
+  beginSession({Credential, User, Session, Config}, req) -/> {
+    // Parse req body
+    check(
+      req
+      checkObject(
+        'credential'
+        false
+        checkEmail("identification", false)
+        checkString("password", false, 64, 8)
+      )
+    )
+    { credential: { identification: email, password }, shallIssue } = req
+
+    // Lookup credential
+    log.trace('lookup credential', { email })
+    let q = Credential.createQuery()
+    q.where(
+      q.And(
+        q.Eq('credentialKey', email)
+      )
+    )
+    let res <- Credential.find(q)
+    cred = (res.getResults())?[0]
+    if not cred:
+      throw new errors.NotFoundError("credential", email)
+
+    // Check credential
+    log.trace('check password')
+    valid <- checkCredential(cred, { plaintextSecret: password })
+    if not valid:
+      throw new errors.NotFoundError("credential", email)
+
+    // Lookup matching user
+    log.trace('locate user')
+    now q = User.createQuery()
+    q.where(
+      q.Eq('id', cred.UserId)
+    )
+    now res <- User.find(q)
+    user = (res.getResults())?[0]
+    if not user:
+      throw new errors.NotFoundError("credential", email)
+
+    // Create new session
+    log.trace('create session')
+    session <- Session.create({
+      userId: user.id
+      expiration: new Date(Date.now() + (90 * 24 * 60 * 60))
+    })
+
+    // Create JWT Token
+    log.trace('create token')
+
+
+
+    {
+      token: {
+        jwt: '12345'
       }
     }
-  }
+  } // beginSession
+)
+
 
 resumeSession(req) -/>
-  {
-    initialExtensionHeader: {
-      initiator: {
-        user_id: "user_1"
-        session_id: "session_1"
-      }
-    }
-  }
+  {}
+
+markSession(req) -/>
+  {}
 
 export default {
-  newUser
-  getUser
-  deleteUser
-  beginSession
-  resumeSession
+  bindings: {
+    "mesh.auth.UserAuthService": {
+      newUser
+      getUser
+      deleteUser
+      beginSession
+      resumeSession
+      markSession
+    }
+  }
 }

@@ -1,17 +1,22 @@
 import { errors } from '@enmeshed/errors'
 import { Protocols, withResources } from '@enmeshed/meshnode'
+import { TestJob } from '../../jobs/Test'
 
 Protocols.require('test/Test.proto')
 
 unary = withResources(
-  {'events': 'events'}
-  unary({events}, req) -/> {
+  {
+    'events': 'events'
+    'jobs': 'jobs'
+  }
+  unary({events, jobs}, req) -/> {
     context = Context.current()
     log.info("server serving TestService.unary", { req })
     if req.message == 'fail':
       throw new errors.InternalError("failed call")
     else:
       events.fire('system.test', { message: req.message })
+      jobs.enqueue(new TestJob(req.message))
       { message: 'unary reply: ' + req.message + ' context: ' + JSON.stringify(context.toJSON()) }
   } // unary
 )

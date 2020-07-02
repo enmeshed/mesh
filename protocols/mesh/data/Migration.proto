@@ -13,5 +13,5 @@ message Migration {
   // Migration data
   google.protobuf.Struct migration = 3;
   // Human-readable description
-  string description = 3;
+  string description = 4;
 }

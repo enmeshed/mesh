@@ -1,0 +1,64 @@
+import { withResources, fieldChecks } from '@enmeshed/meshnode'
+
+emailLogin = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.auth.UserAuthService"
+  }
+  emailLogin({svc}, {body}, res): void -/> {
+    fieldChecks.check(
+      body
+      fieldChecks.checkEmail('email', false)
+      fieldChecks.checkString('password', false)
+    )
+    session <- svc.beginSession({
+      credential: {
+        type: 'email_and_password'
+        identification: body.email
+        password: body.password
+      }
+      fingerprint: {
+        checked: false
+      }
+    })
+    res.json({token: session.token})
+  } // getMigrations
+)
+
+signup = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.auth.UserAuthService"
+  }
+  signup({svc}, {body}, res): void -/> {
+    fieldChecks.check(
+      body
+      fieldChecks.checkEmail('email', false)
+      fieldChecks.checkString('password', false, 255, 8)
+      fieldChecks.checkString('name', false, 1000, 4)
+    )
+    user <- svc.newUser({
+      credential: {
+        type: 'email_and_password'
+        identification: body.email
+        password: body.password
+      }
+      payload: {
+        fullName: body.name
+      }
+    })
+    session <- svc.beginSession({
+      credential: {
+        type: 'email_and_password'
+        identification: body.email
+        password: body.password
+      }
+      fingerprint: {
+        checked: false
+      }
+    })
+    res.json({userId: user.id, token: session.token})
+  } // getMigrations
+)
+
+export default (router) ->
+  router.async('post', '/login/email', emailLogin)
+  router.async('post', '/signup/full', signup)

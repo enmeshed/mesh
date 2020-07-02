@@ -27,6 +27,8 @@ appContainer:
   resources: {}
   # Inject ConfigMaps into the environment
   envMaps: []
+  # Inject Secrets into the environment
+  envSecrets: []
 
 # Sidecar configs
 envoy:

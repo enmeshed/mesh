@@ -29,7 +29,8 @@ const externalModules = {
   "mysql2/promise": true,
   "express": true,
   "jaeger-client": true,
-  "ioredis": true
+  "ioredis": true,
+  "bull": true
 }
 
 module.exports = {

@@ -6,4 +6,7 @@ import "google/protobuf/struct.proto";
 
 message SessionFingerprint {
   google.protobuf.Struct payload = 1;
+  // When false, either on a session or an incoming fingerprint, the fingerprint
+  // will not be checked.
+  bool checked = 2;
 }

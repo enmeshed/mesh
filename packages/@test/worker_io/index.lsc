@@ -3,12 +3,20 @@ import { Container } from '@enmeshed/alpha'
 import { singletonProvider, Log, StdoutLogWriter } from '@enmeshed/meshnode'
 import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
 
+// Data
+import { bindings } from '@mesh/backend_models'
+
+// GRPC
 import EnvoyAuth from './grpc/EnvoyAuth'
 import Test from './grpc/Test'
+import DataManagementService from './grpc/DataManagementService'
 // import UserAuthService from './UserAuthService'
 
+// Events
 import TestEvents from './events/Test'
 
+// Jobs
+import TestJobs from './jobs/Test'
 
 // Log to stdout
 Log.addWriter(new StdoutLogWriter())
@@ -18,24 +26,29 @@ ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
 Container.provide(singletonProvider("node.reflectionDataSource", ds))
 
 asyncMain() -/>
-  // GRPC services
+  //////////// Data Models
+  dataMgr <- Container.get("model.manager")
+  dataMgr.bindAll(bindings)
+
+  //////////// GRPC services
   svcMgr <- Container.get("grpc.service.manager")
   svcMgr.bind('envoy_auth', EnvoyAuth.bindings)
   svcMgr.bind('goodbye', Test.bindings)
+  svcMgr.bind('data_management', DataManagementService.bindings)
   // svcMgr.bind('userauth', {
   //   'mesh.auth.UserAuthService': UserAuthService
   // })
 
-  // Event Handlers
+  // Offer all bound services
+  <- svcMgr.autoStart()
+
+  //////////// Event Handlers
   events <- Container.get('events')
   events.listenAll(TestEvents.bindings)
 
-  // Offer all bound services
-  log.trace("*************************** SVCMGR.AUTOSTART")
-  promises = svcMgr.autoStart()
-  log.trace("promises", { promises })
-  <- promises
-  log.trace("************************** SVCMGR.AUTOSTART COMPLETE")
+  ///////////// Job Processors
+  jobs <- Container.get('jobs')
+  jobs.processAll(TestJobs.bindings)
 
 asyncMain()
   .catch! (err) ->
