@@ -2,15 +2,15 @@
   "name": "gitops",
   "license": "UNLICENSED",
   "dependencies": {
-    "@enmeshed/node-control-plane": "^0.2.6",
-    "@enmeshed/grpc": "^0.2.6",
-    "@enmeshed/protobuf": "^0.2.3",
-    "kafkajs": "^1.11.0",
+    "@enmeshed/node-control-plane": "^0.2.7",
+    "@enmeshed/grpc": "^1.0.0",
+    "@enmeshed/protobuf": "^1.0.0",
+    "kafkajs": "^1.12.0",
     "mysql2": "^2.1.0",
     "express": "^4.17.1",
     "jaeger-client": "^3.18.0",
-    "ioredis": "^4.14.1",
-    "@elastic/elasticsearch": "^7.5.0",
-    "bull": "^3.14.0"
+    "ioredis": "^4.17.3",
+    "@elastic/elasticsearch": "^7.8.0",
+    "bull": "^3.16.0"
   }
 }

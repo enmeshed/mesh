@@ -1,0 +1,37 @@
+// Cache session data for a short time to avoid numerous roundtrips to the
+// database while serving a series of requests.
+timestamp$ = Symbol('session cache timestamp')
+
+export class SessionCache:
+  sessions = new Map()
+  lastSweep = Date.now()
+
+  static timestampOf(cached) ->
+    cached[timestamp$]
+
+  constructor(maxAge) ->
+    this.maxAge = maxAge
+
+  get(id) ->
+    session = this.sessions.get(id)
+    if not session: return null
+    age = Date.now() - session[timestamp$]
+    if age > this.maxAge:
+      this.sessions.delete(id)
+      return null
+
+  set(id, session): void ->
+    session[timestamp$] = Date.now()
+    this.sessions.set(id, session)
+
+  sweep(): void ->
+    t = Date.now()
+    { lastSweep, maxAge } = this
+    if((t - lastSweep) < maxAge): return
+
+    // Remove oold sessions
+    { sessions } = this
+    sessions.forEach((session, key) ->
+      age = t - session[timestamp$]
+      if age > maxAge: sessions.delete(key)
+    )

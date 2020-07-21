@@ -2,7 +2,8 @@ import { entity, field, types } from '@ormojo/ephraim'
 import * as BaseModels from '@mesh/models'
 
 // An offer a user can claim when subscribing or signing up
-@entity({name: "Offer"}) class Offer extends BaseModels.Offer:
+@entity({name: "Offer"})
+class Offer extends BaseModels.Offer:
   // Referral code for those who claim this offer
   @field(types.string) referralCode = undefined
   // Campaign code for those who claim this offer

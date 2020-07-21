@@ -14,8 +14,7 @@ const throwModulePath = path.resolve(__dirname, 'throw.js');
 const babelPreset = [
   '@lightscript',
   {
-    env: { targets: { node: 10 } },
-    stdlib: { lodash: false }
+    env: { targets: { node: 10 } }
   }
 ]
 
@@ -99,6 +98,13 @@ module.exports = {
             loader: require.resolve('babel-loader'),
             options: {
               babelrc: false,
+
+              caller: {
+                name: 'babel-loader',
+                supportsTopLevelAwait: false,
+                supportsStaticESM: true,
+                supportsDynamicImport: true
+              },
 
               presets: [ babelPreset ],
 

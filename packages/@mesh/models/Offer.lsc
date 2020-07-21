@@ -1,9 +1,10 @@
-import { entity, field, types } from '@ormojo/ephraim'
+import { entity, field, types, Entity } from '@ormojo/ephraim'
 import { Timestamped } from '@ormojo/ormojo'
 import cuid from 'cuid'
 
 // An offer a user can claim when subscribing or signing up
-@entity({name: "Offer", inherits: [Timestamped]}) class Offer:
+@entity({name: "Offer", inherits: [Timestamped]})
+class Offer extends Entity:
   @field(types.string) id = -> `offer_${cuid()}`
   @field(types.date) expiration = undefined
   // Offer type

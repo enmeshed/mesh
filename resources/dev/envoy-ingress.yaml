@@ -33,7 +33,7 @@ spec:
         command: ["/bin/bash", "/app/init.sh"]
       containers:
       - name: envoy
-        image: envoyproxy/envoy-alpine:v1.10.0
+        image: envoyproxy/envoy-alpine:v1.12.6
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 3000

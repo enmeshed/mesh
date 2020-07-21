@@ -7,41 +7,32 @@ import "google/protobuf/struct.proto";
 import "mesh/auth/SessionToken.proto";
 import "mesh/auth/SessionFingerprint.proto";
 import "mesh/auth/Credential.proto";
+import "mesh/auth/Ability.proto";
+import "mesh/auth/User.proto";
 
 service UserAuthService {
+  // Create new user
   rpc newUser(NewUserRequest) returns (NewUserResponse);
+  // Get user info
   rpc getUser(GetUserRequest) returns (GetUserResponse);
+  // Delete user
   rpc deleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // Create a new session
   rpc beginSession(BeginSessionRequest) returns (BeginSessionResponse);
+  // Resume an existing session
   rpc resumeSession(ResumeSessionRequest) returns (ResumeSessionResponse);
   // Mark a session as being active
   rpc markSession(MarkSessionRequest) returns (MarkSessionResponse);
-}
-
-message MarkSessionRequest {
-  SessionToken token = 1;
-  google.protobuf.Struct payload = 2;
-}
-
-message MarkSessionResponse {}
-
-message ResumeSessionRequest {
-  SessionToken token = 1;
-  SessionFingerprint fingerprint = 2;
-}
-
-message ResumeSessionResponse {
-}
-
-message BeginSessionRequest {
-  Credential credential = 1;
-  SessionFingerprint fingerprint = 2;
-  google.protobuf.Struct payload = 3;
-  bool shallIssue = 4;
-}
-
-message BeginSessionResponse {
-  SessionToken token = 1;
+  // Create role
+  rpc createRole(CreateRoleRequest) returns (CreateRoleResponse);
+  // Delete role
+  rpc deleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  // Set user roles
+  rpc setUserRoles(SetUserRolesRequest) returns (SetUserRolesResponse);
+  // Set abilities for a role or user
+  rpc setAbilities(SetAbilitiesRequest) returns (SetAbilitiesResponse);
+  // Get roles and abilities for a user
+  rpc getUserSecurity(GetUserSecurityRequest) returns (GetUserSecurityResponse);
 }
 
 message NewUserRequest {
@@ -55,12 +46,14 @@ message NewUserResponse {
 }
 
 message GetUserRequest {
-  string id = 1;
+  oneof operation {
+    string id = 1;
+    repeated string ids = 2;
+  }
 }
 
 message GetUserResponse {
-  string id = 1;
-  google.protobuf.Struct payload = 2;
+  map<string, mesh.auth.User> users = 1;
 }
 
 message DeleteUserRequest {
@@ -68,3 +61,75 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {}
+
+message MarkSessionRequest {
+  SessionToken token = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message MarkSessionResponse {}
+
+message ResumeSessionRequest {
+  SessionToken token = 1;
+  SessionFingerprint fingerprint = 2;
+  string sessionId = 3;
+}
+
+message ResumeSessionResponse {
+  google.protobuf.Struct payload = 1;
+}
+
+message BeginSessionRequest {
+  Credential credential = 1;
+  SessionFingerprint fingerprint = 2;
+  google.protobuf.Struct payload = 3;
+  bool shallIssue = 4;
+}
+
+message BeginSessionResponse {
+  SessionToken token = 1;
+}
+
+message CreateRoleRequest {
+  string name = 1;
+}
+
+message CreateRoleResponse {
+  string id = 1;
+}
+
+message DeleteRoleRequest {
+  string id = 1;
+}
+
+message DeleteRoleResponse {}
+
+message SetUserRolesRequest {
+  string userId = 1;
+  repeated string roleIds = 2;
+}
+
+message SetUserRolesResponse {}
+
+message SetAbilitiesRequest {
+  oneof subject {
+    string userId = 1;
+    string roleId = 2;
+  }
+  oneof action {
+    repeated string removeAbilityIds = 3;
+    repeated mesh.auth.Ability addAbilities = 4;
+  }
+}
+
+message SetAbilitiesResponse {}
+
+message GetUserSecurityRequest {
+  string userId = 1;
+}
+
+message GetUserSecurityResponse {
+  repeated string roleIds = 1;
+  repeated mesh.auth.Ability userAbilities = 2;
+  repeated mesh.auth.Ability roleAbilities = 3;
+}

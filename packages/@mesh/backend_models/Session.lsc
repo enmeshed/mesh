@@ -3,7 +3,8 @@ import { Timestamped } from '@ormojo/ormojo'
 
 import * as BaseModels from '@mesh/models'
 
-@entity({name: "Session", inherits: [Timestamped]}) class Session extends BaseModels.Session:
+@entity({name: "Session", inherits: [Timestamped]})
+class Session extends BaseModels.Session:
   // User for session
   @field(types.string) userId = undefined
   // Device fingerprinting info
@@ -12,5 +13,7 @@ import * as BaseModels from '@mesh/models'
   @field(types.string) billingAccountId = undefined
   // Subscription associated with session
   @field(types.string) subscriptionId = undefined
+  // Cached security information. Refreshed when user security changes
+  @field(types.json) cachedSecurity = undefined
 
 export { Session }

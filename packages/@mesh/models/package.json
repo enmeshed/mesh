@@ -2,8 +2,8 @@
   "name": "@mesh/models",
   "version": "0.1.0",
   "dependencies": {
-    "@ormojo/ephraim": "^0.2.10",
-    "@ormojo/ormojo": "^0.2.13",
+    "@ormojo/ephraim": "^1.0.0",
+    "@ormojo/ormojo": "^1.0.0",
     "cuid": "^2.1.8"
   }
 }

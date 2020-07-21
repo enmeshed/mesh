@@ -74,7 +74,7 @@
             "envoy.ext_authz": {
               "check_settings": {
                 "context_extensions": {
-                  "context": "jaeger"
+                  "context": "admin"
                 }
               }
             }
@@ -88,7 +88,63 @@
             "envoy.ext_authz": {
               "check_settings": {
                 "context_extensions": {
-                  "context": "jaeger"
+                  "context": "admin"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "vroute_phpmyadmin",
+          "match": { "prefix": "/phpmyadmin/" },
+          "route": { "prefix_rewrite": "/", "cluster": "cluster_phpmyadmin" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "admin"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "vroute_phpmyadmin1",
+          "match": { "prefix": "/phpmyadmin" },
+          "route": { "prefix_rewrite": "/", "cluster": "cluster_phpmyadmin" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "admin"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "vroute_kibana",
+          "match": { "prefix": "/kibana/" },
+          "route": { "prefix_rewrite": "/", "cluster": "cluster_kibana" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "admin"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "vroute_kibana1",
+          "match": { "prefix": "/kibana" },
+          "route": { "prefix_rewrite": "/", "cluster": "cluster_kibana" },
+          "per_filter_config": {
+            "envoy.ext_authz": {
+              "check_settings": {
+                "context_extensions": {
+                  "context": "admin"
                 }
               }
             }
@@ -112,6 +168,48 @@
                 "socket_address": {
                   "address": "jaeger-query.default.svc.cluster.local",
                   "port_value": 16686
+                }
+              }
+            }
+          }]
+        }]
+      }
+    },
+    {
+      "name": "cluster_kibana",
+      "connect_timeout": { "seconds": 1 },
+      "type": "STRICT_DNS",
+      "lb_policy": "ROUND_ROBIN",
+      "load_assignment": {
+        "cluster_name": "cluster_kibana",
+        "endpoints": [{
+          "lb_endpoints": [{
+            "endpoint": {
+              "address": {
+                "socket_address": {
+                  "address": "kibana-kb-http.default.svc.cluster.local",
+                  "port_value": 5601
+                }
+              }
+            }
+          }]
+        }]
+      }
+    },
+    {
+      "name": "cluster_phpmyadmin",
+      "connect_timeout": { "seconds": 1 },
+      "type": "STRICT_DNS",
+      "lb_policy": "ROUND_ROBIN",
+      "load_assignment": {
+        "cluster_name": "cluster_phpmyadmin",
+        "endpoints": [{
+          "lb_endpoints": [{
+            "endpoint": {
+              "address": {
+                "socket_address": {
+                  "address": "phpmyadmin.default.svc",
+                  "port_value": 80
                 }
               }
             }

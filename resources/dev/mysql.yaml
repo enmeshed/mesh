@@ -2,7 +2,6 @@ apiVersion: kubedb.com/v1alpha1
 kind: MySQL
 metadata:
   name: mysql
-  namespace: development
 spec:
   version: "5.7-v2"
   storageType: "Durable"
@@ -21,6 +20,3 @@ spec:
         requests:
           memory: "64Mi"
           cpu: "250m"
-        limits:
-          memory: "512Mi"
-          cpu: "500m"

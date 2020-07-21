@@ -1,7 +1,8 @@
 import { withResources, Tracing, Origin, Protocols } from '@enmeshed/meshnode'
+import { verifySessionJwt } from '@mesh/credential'
+import { SessionCache } from './SessionCache'
 
 cookie = require('cookie')
-debug = require('debug')('userauth.EnvoyAuth')
 
 Protocols.require('envoy/service/auth/v2/external_auth.proto')
 
@@ -14,11 +15,82 @@ extractToken(appId, headers, cookies) ->
   cookieName = `session_${appId}`
   cookies?[cookieName]
 
+sessionCache = new SessionCache(60*1000)
+
+// Get session data, either from cache or remote
+getSessionData = withResources(
+  {
+    UserAuthService: "grpc.client.protocol:mesh.auth.UserAuthService"
+  }
+  getSessionData({UserAuthService},  sessionId) -/> {
+    cached = sessionCache.get(sessionId)
+    if cached: return cached
+
+    // Clear stale data on fetch passes
+    sessionCache.sweep()
+  }
+)
+
+
+
+makeDeniedResponse(reason) ->
+  {
+    status: { code: 7 }
+    denied_response: {
+      status: { code: 403 }
+      body: JSON.stringify({
+        reason
+      })
+    }
+  }
+
+makeOKResponse(context) ->
+  // Convert context to Envoy header injection
+  headerValues = {}
+  context.toHeaders(headerValues)
+  newHeaders = [...for key k, val v in headerValues: [{
+    header: { key: k, value: v }
+    append: { value: false }
+  }]]
+
+  // Create an envoy.service.auth.v2.CheckResponse object
+  {
+    status: { code: 0 }
+    ok_response: { headers: newHeaders }
+  }
+
+makeAuthenticatedResponse(userId, sessionId) ->
+  // Create initial user security context
+  context = Context.create({
+    type: 'user'
+    items: [
+      new Tracing()
+      Origin.create({
+        userId
+        sessionId
+      })
+    ]
+  })
+  makeOKResponse(context)
+
+makeAnonymousResponse() ->
+  context = Context.create({
+    type: 'user'
+    items: [
+      new Tracing()
+      Origin.create({
+        anonymousRequest: true
+      })
+    ]
+  })
+  makeOKResponse(context)
+
 Check = withResources(
   {
-    "Config": "config"
+    Config: "config"
+    UserAuthService: "grpc.client.protocol:mesh.auth.UserAuthService"
   }
-  ({Config}, req) -/>
+  ({Config, UserAuthService}, req) -/>
     httpData = req?.attributes?.request?.http or {}
     { headers, method, path } = httpData
 
@@ -37,34 +109,23 @@ Check = withResources(
 
     // Extract session token
     token = extractToken('mesh', headers, cookies)
+    // No token = anonymous user
+    if not token:
+      return makeAnonymousResponse()
+
+    // Decode JWT
+    [decodedToken, err] <!- verifySessionJwt(token, Config.required('jwt_signing_secret'))
+
+    if err:
+      log.info({ err }, "could not decode authentication token")
+      // XXX: punting here for debugging purposes
+      // in actuality, this should fork on whether anonymous access is
+      // allowed
+      return makeDeniedResponse("invalid authentication token")
 
     log.trace("Check: got token", { token })
 
-    // Create initial user security context
-    context = Context.create({
-      type: 'user'
-      items: [
-        new Tracing()
-        Origin.create({
-          userId: 'user_1'
-          sessionId: 'session_1'
-        })
-      ]
-    })
-
-
-    headerValues = {}
-    context.toHeaders(headerValues)
-    newHeaders = [...for key k, val v in headerValues: [{
-      header: { key: k, value: v }
-      append: { value: false }
-    }]]
-
-    // XXX: this check always passes
-    {
-      status: { code: 0 }
-      ok_response: { headers: newHeaders }
-    }
+    return makeAuthenticatedResponse(decodedToken.sub, decodedToken.session)
 )
 
 export default {

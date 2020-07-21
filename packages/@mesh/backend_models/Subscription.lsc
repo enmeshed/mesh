@@ -3,7 +3,8 @@ import { Timestamped } from '@ormojo/ormojo'
 
 import * as BaseModels from '@mesh/models'
 
-@entity({name: "Subscription", inherits: [Timestamped]}) class Subscription extends BaseModels.Subscription:
+@entity({name: "Subscription", inherits: [Timestamped]})
+class Subscription extends BaseModels.Subscription:
   // Billing account that owns this subscription
   @field(types.string) billingAccountId = undefined
 

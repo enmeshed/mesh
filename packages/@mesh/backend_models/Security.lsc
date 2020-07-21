@@ -1,0 +1,57 @@
+import { entity, field, types, Entity } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+
+// RBAC roles
+@entity({name: "Role", inherits: [Timestamped]})
+class Role extends Entity:
+  @field(types.string) id = -> `role_${cuid()}`
+
+  // Role readable name
+  @field(types.string) name = undefined
+
+// Map from users to roles
+@entity({name: "UserRole"})
+class UserRole extends Entity:
+  // Associated user
+  @field(types.string) userId = undefined
+  // Associated role
+  @field(types.string) roleId = undefined
+
+@entity({name: "Ability"})
+class Ability extends Entity:
+  // Object type of the ability
+  @field(types.string) object = undefined
+  // Object id of the ability
+  @field(types.string) objectId = undefined
+  // Verb
+  @field(types.string) verb = undefined
+  // Extra data
+  @field(types.json) extra = undefined
+
+  toAbilityProtobuf() -> {
+    id: this.id
+    object: this.object
+    objectId: this.objectId
+    verb: this.verb
+    payload: this.extra
+  }
+
+// Map from roles to abilities
+@entity({name: "RoleAbility"})
+class RoleAbility extends Ability:
+  @field(types.string) id = -> `ra_${cuid()}`
+  // Associated role
+  @field(types.string) roleId = undefined
+
+// Map from users to abilities
+@entity({name: "UserAbility"})
+class UserAbility extends Ability:
+  @field(types.string) id = -> `ua_${cuid()}`
+  // Associated user
+  @field(types.string) userId = undefined
+
+
+export {
+  UserRole, Role, RoleAbility, UserAbility, Ability
+}

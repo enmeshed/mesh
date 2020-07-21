@@ -60,16 +60,17 @@
     },
     "mysql_development": {
       "type": "mysql",
-      "host": "mysql.development.svc.cluster.local",
+      "host": "mysql.default.svc",
       "port": 3306,
-      "database": "app",
+      "database": "app_development",
       "user": "app",
       "passwordSecretId": "MYSQL_PASSWORD"
     },
     "elasticsearch_development": {
       "type": "elasticsearch",
-      "nodes": ["https://es-primary-es-http.development.svc.cluster.local:9200"],
+      "nodes": ["https://es-primary-es-http.default.svc:9200"],
       "user": "app",
+      "indexPrefix": "dev_",
       "passwordSecretId": "ELASTICSEARCH_PASSWORD"
     }
   },
@@ -99,6 +100,7 @@
         "envoy_auth": "worker-io",
         "goodbye": "worker-io",
         "data_management": "worker-io",
+        "userauth": "worker-io",
         "kafka": "kafka_development",
         "mysql": "mysql_development",
         "redis": "redis_development",

@@ -1,6 +1,7 @@
 import { errors } from '@enmeshed/errors'
 import { Protocols, withResources, fieldChecks } from '@enmeshed/meshnode'
-import { makeCredential, checkCredential } from '@mesh/credential'
+import { makeCredential, checkCredential, issueSessionJWT, verifySessionJWT } from '@mesh/credential'
+import { toPlainObject } from '@ormojo/ephraim'
 
 { check, checkObject, checkString, checkEmail } = fieldChecks
 
@@ -9,10 +10,10 @@ Protocols.require('mesh/auth/UserAuthService.proto')
 newUser = withResources(
   {
     events: 'events'
-    User: "models:User"
-    Credential: "models:Credential"
+    User: "model:User"
+    Credential: "model:Credential"
   }
-  newUser({User, Credential}, req) -/> {
+  newUser({User, Credential, events}, req) -/> {
     // Obtain data from request
     check(
       req
@@ -29,7 +30,12 @@ newUser = withResources(
       )
     )
 
-    let { credential: { identification: email, password }, payload: { fullName, createBillingAccount, referralCode, offerCode, propertyId } } = req
+    let {
+      credential: { identification: email, password }
+      payload: {
+        fullName, createBillingAccount, referralCode, offerCode, propertyId
+      }
+    } = req
     now email = email.toLowerCase()
 
     log.info("new user:", { email, fullName })
@@ -37,9 +43,7 @@ newUser = withResources(
     // Verify credential key uniqueness
     q = Credential.createQuery()
     q.where(
-      q.And(
-        q.Eq('credentialKey', email)
-      )
+      q.Eq('credentialKey', email)
     )
     res <- Credential.find(q)
     if not res.isEmpty():
@@ -55,9 +59,12 @@ newUser = withResources(
     // Create associated credential
     cred <- makeCredential('email_and_password', { email, plaintextSecret: password })
     cred.UserId = user.id
-
     <- Credential.create(cred)
 
+    // Fire system event
+    events.fire('user.new', { userId: user.id })
+
+    // Response buffer
     {
       id: user.id
       payload: {
@@ -69,22 +76,82 @@ newUser = withResources(
   } // newUser
 )
 
-getUser(req) -/>
+getUser = withResources(
   {
-    id: "user_1"
+    User: "model:User"
   }
+  getUser({ User }, req) -/> {
+    ids = if req.ids:
+      req.ids
+    elif req.id:
+      [req.id]
+    else:
+      throw new errors.InvalidArgumentError("operation", "must provide id or ids")
 
-deleteUser(req) -/>
-  {}
+    if ids.length == 0: return { users: {} }
+
+    q = User.createQuery()
+    q.where(q.In('id', ids))
+    res <- User.find(q)
+
+    idMap = {...for elem user in res.getResults():
+      { [user.id]: { id: user.id, payload: toPlainObject(user) } }
+    }
+
+    { users: idMap }
+  }
+)
+
+deleteUser = withResources(
+  {
+    User: "model:User"
+    UserRole: "model:UserRole"
+    UserAbility: "model:UserAbility"
+    Credential: "model:Credential"
+    Session: "model:Session"
+    events: "events"
+  }
+  deleteUser({User, UserRole, UserAbility, Credential, Session, events}, req) -/> {
+    q = User.createQuery()
+    q.where(q.Eq('id', req.id))
+    res <- User.find(q)
+
+    if res.isEmpty():
+      throw new errors.NotFoundError("user", req.id)
+
+    rq = UserRole.createQuery()
+    rq.where(rq.Eq('userId', req.id))
+    <- UserRole.destroyByQuery(rq)
+
+    aq = UserAbility.createQuery()
+    aq.where(aq.Eq('userId', req.id))
+    <- UserAbility.destroyByQuery(aq)
+
+    cq = Credential.createQuery()
+    cq.where(cq.Eq('userId', req.id))
+    <- Credential.destroyByQuery(cq)
+
+    sq = Session.createQuery()
+    sq.where(sq.Eq('userId', req.id))
+    <- Session.destroyByQuery(sq)
+
+    <- User.destroyByQuery(q)
+
+    events.fire('user.deleted', { userId: req.id })
+
+    {}
+  }
+)
 
 beginSession = withResources(
   {
-    User: "models:User"
-    Credential: "models:Credential"
-    Session: "models:Session"
+    User: "model:User"
+    Credential: "model:Credential"
+    Session: "model:Session"
     Config: 'config'
+    UserAuthService: "grpc.client.protocol:mesh.auth.UserAuthService"
   }
-  beginSession({Credential, User, Session, Config}, req) -/> {
+  beginSession({Credential, User, Session, Config, UserAuthService}, req) -/> {
     // Parse req body
     check(
       req
@@ -120,39 +187,243 @@ beginSession = withResources(
     log.trace('locate user')
     now q = User.createQuery()
     q.where(
-      q.Eq('id', cred.UserId)
+      q.Eq('id', cred.userId)
     )
     now res <- User.find(q)
     user = (res.getResults())?[0]
     if not user:
       throw new errors.NotFoundError("credential", email)
 
+    // Obtain security for user
+    log.trace('get present security info')
+    securityInfo <- UserAuthService.getUserSecurity({userId: cred.userId})
+    cachedSecurity = {
+      roleIds: securityInfo.roleIds
+      abilities: securityInfo.userAbilities.concat(securityInfo.roleAbilities)
+    }
+
     // Create new session
+    sessionLengthMs = 90*24*60*60*1000
     log.trace('create session')
     session <- Session.create({
       userId: user.id
-      expiration: new Date(Date.now() + (90 * 24 * 60 * 60))
+      expiration: new Date(Date.now() + sessionLengthMs)
+      cachedSecurity
     })
 
     // Create JWT Token
     log.trace('create token')
-
-
+    token <- issueSessionJWT(user.id, session.id, sessionLengthMs/1000, Config.required('jwt_signing_secret'))
 
     {
       token: {
-        jwt: '12345'
+        jwt: token
       }
     }
   } // beginSession
 )
 
+resumeSession = withResources(
+  {
+    Session: "model:Session"
+    Config: 'config'
+  }
+  resumeSession({ Session, Config }, {sessionId, token}) -/> {
+    decodedId = if token:
+      decodedToken <- verifySessionJWT(token, Config.required('jwt_signing_secret'))
+      decodedToken.session
+    else:
+      sessionId
 
-resumeSession(req) -/>
-  {}
+    q = Session.createQuery()
+    q.where(q.Eq('id', decodedId))
+    res <- Session.find(q)
+    session = (res.getResults())?[0]
+    if not session: throw new errors.NotFoundError("session", decodedId)
 
-markSession(req) -/>
+    {
+      payload: {
+        sessionId: session.id
+        userId: session.userId
+        cachedSecurity: session.cachedSecurity
+      }
+    }
+  }
+)
+
+markSession = withResources(
   {}
+  markSession(deps, req) -/> {
+  }
+)
+
+createRole = withResources(
+  {
+    "Role": "model:Role"
+  }
+  createRole({ Role }, req) -/> {
+    check(
+      req
+      checkString('name', false)
+    )
+    { name } = req
+
+    role <- Role.create({
+      name
+    })
+
+    { id: role.id }
+  }
+)
+
+deleteRole = withResources(
+  {
+    "Role": "model:Role"
+    "UserRole": "model:UserRole"
+    "RoleAbility": "model:RoleAbility"
+  }
+  deleteRole({ Role, UserRole, RoleAbility }, req) -/> {
+    check(
+      req
+      checkString('id', false)
+    )
+    { id } = req
+
+    let q = Role.createQuery()
+    q.where(q.Eq('id', id))
+
+    let res <- Role.find(q)
+    if res.isEmpty():
+      throw new errors.NotFoundError("role", id)
+
+    // Destroy all related role abilities and mappings
+    raQ = RoleAbility.createQuery()
+    raQ.where(q.Eq('roleId', id))
+    urQ = UserRole.createQuery()
+    urQ.where(q.Eq('roleId', id))
+    <- [
+      RoleAbility.destroyByQuery(raQ)
+      UserRole.destroyByQuery(urQ)
+    ]
+
+    // Delete role
+    <- Role.destroyByQuery(q)
+
+    // Success
+    {}
+  }
+)
+
+setUserRoles = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.auth.UserAuthService"
+    "UserRole": "model:UserRole"
+  }
+  setUserRoles({ svc, UserRole }, req) -/> {
+    user <- svc.getUser({ id: req.userId })
+
+    // Determine needed changes
+    { roleIds: targetRoleIds } = req
+    { roleIds: currentRoleIds } = user
+
+    addedRoleIds = targetRoleIds.filter(
+      (targetRoleId) -> currentRoleIds.indexOf(targetRoleId) == -1
+    )
+    deletedRoleIds = currentRoleIds.filter(
+      (currentRoleId) -> targetRoleIds.indexOf(currentRoleId) == -1
+    )
+
+    // Quit if no change
+    if (addedRoleIds.length == 0) and (deletedRoleIds.length == 0):
+      return {}
+
+    // Delete deleted roles
+    deletePromise = if deletedRoleIds.length > 0:
+      q = UserRole.createQuery()
+      q.where(q.In('roleId', deletedRoleIds))
+      UserRole.destroyByQuery(q)
+    else:
+      Promise.resolve(null)
+
+    // Add added roles
+    insertPromises = [...for elem addedRoleId in addedRoleIds:
+      [UserRole.create({ userId: user.id, roleId: addedRoleId })]
+    ]
+
+    <- Promise.all(deletePromise, ...insertPromises)
+
+    {}
+  }
+)
+
+setAbilites = withResources(
+  {
+    "UserAbility": "model:UserAbility"
+    "RoleAbility": "model:RoleAbility"
+    "events": "events"
+  }
+  setAbilities({ UserAbility, RoleAbility, events }, req) -/> {
+    [ type, AbilityModel, subjectId, subjectField, event ] = if req.userId:
+      ['user', UserAbility, req.userId, 'userId', ['security.user.changed', req.userId]]
+    elif req.roleId:
+      ['role', RoleAbility, req.roleId, 'roleId', ['security.role.changed', req.roleId]]
+    else:
+      throw new errors.MissingArgumentError('subject')
+
+    if req.removeAbilityIds?.length > 0:
+      q = AbilityModel.createQuery()
+      q.where(q.In('id', req.removeAbilityIds))
+      <- AbilityModel.destroyByQuery(q)
+      events.fire(...event)
+      return {}
+    elif req.addAbilities?.length > 0:
+      <- [...for elem ability in req.addAbilities:
+        json = Object.assign({}, ability, { [subjectField]: subjectId })
+        delete json.id
+        [AbilityModel.create(json)]
+      ]
+      events.fire(...event)
+      return {}
+    else:
+      throw new errors.InvalidArgumentError("action", "no valid action present")
+  }
+)
+
+getUserSecurity = withResources(
+  {
+    "UserRole": "model:UserRole"
+    "UserAbility": "model:UserAbility"
+    "RoleAbility": "model:RoleAbility"
+  }
+  getUserSecurity({UserRole, UserAbility, RoleAbility}, req) -/> {
+    // Get roleIDs held by the user
+    let q = UserRole.createQuery()
+    q.where(q.Eq('id', req.userId))
+    let rset <- UserRole.find(q)
+    roles = rset.getResults()
+    roleIds = [...for elem role in roles: [role.id]]
+
+    // Get corresponding role abilities
+    now q = RoleAbility.createQuery()
+    q.where(q.In('roleId', roleIds))
+    now rset <- RoleAbility.find(q)
+    roleAbilities = [...for elem result in rset.getResults():
+      [result.toAbilityProtobuf()]
+    ]
+
+    // Get corresponding user abilities
+    now q = UserAbility.createQuery()
+    q.where(q.Eq('userId', req.userId))
+    now rset <- UserAbility.find(q)
+    userAbilities = [...for elem result in rset.getResults():
+      [result.toAbilityProtobuf()]
+    ]
+
+    // Compose response
+    { roleIds, userAbilities, roleAbilities }
+  }
+)
+
 
 export default {
   bindings: {
@@ -163,6 +434,11 @@ export default {
       beginSession
       resumeSession
       markSession
+      createRole
+      deleteRole
+      setUserRoles
+      setAbilites
+      getUserSecurity
     }
   }
 }

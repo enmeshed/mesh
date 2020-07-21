@@ -7,6 +7,7 @@ import { Subscription } from './Subscription'
 import { Session } from './Session'
 import { SessionActivity } from './SessionActivity'
 import { GeneralActivity } from './GeneralActivity'
+import { Role, UserRole, RoleAbility, UserAbility } from './Security'
 
 export bindings = {
   'User': {
@@ -18,12 +19,49 @@ export bindings = {
       ]
     }
   }
+  'Role': {
+    model: Role
+    backend: 'mysql'
+  }
+  'UserRole': {
+    model: UserRole
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['userId'] }
+        { columnNames: ['roleId'] }
+      ]
+    }
+  }
+  'RoleAbility': {
+    model: RoleAbility
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['roleId'] }
+        { columnNames: ['object'] }
+        { columnNames: ['objectId'] }
+      ]
+    }
+  }
+  'UserAbility': {
+    model: UserAbility
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['userId'] }
+        { columnNames: ['object'] }
+        { columnNames: ['objectId'] }
+      ]
+    }
+  }
   'Credential': {
     model: Credential
     backend: 'mysql'
     bindings: {
       indices: [
         { columnNames: ['credentialKey'], unique: true }
+        { columnNames: ['userId'] }
       ]
     }
   }

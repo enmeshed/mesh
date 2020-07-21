@@ -1,0 +1,25 @@
+// Description of an Ability that can be attached to a user or a role
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+
+message Ability {
+  // Object type the ability targets
+  string object = 1;
+  // Object ID of the target object
+  string objectId = 2;
+  // Verb describing the ability
+  string verb = 3;
+  // Extra permission data
+  google.protobuf.Struct payload = 4;
+  // Ability id
+  string id = 5;
+  // Subject type holding the ability
+  string subject = 6;
+  // Subject id holding the ability
+  string subjectId = 7;
+  // Is the ability positive or negative
+  bool isNegative = 8;
+}

@@ -1,4 +1,4 @@
-/node_modules
+node_modules/
 /gitops/build
 /gitops/node_modules
 /gitops/protocols

@@ -1,8 +1,9 @@
-import { entity, field, types } from '@ormojo/ephraim'
+import { entity, field, types, Entity } from '@ormojo/ephraim'
 import { Timestamped } from '@ormojo/ormojo'
 import cuid from 'cuid'
 
-@entity({name: "GeneralActivity", inherits: [Timestamped]}) class GeneralActivity:
+@entity({name: "GeneralActivity", inherits: [Timestamped]})
+class GeneralActivity extends Entity:
   @field(types.string) id = -> `activity_${cuid()}`
   // Activity subject
   @field(types.string) subjectType = undefined

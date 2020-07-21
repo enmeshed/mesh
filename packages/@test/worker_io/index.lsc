@@ -10,7 +10,7 @@ import { bindings } from '@mesh/backend_models'
 import EnvoyAuth from './grpc/EnvoyAuth'
 import Test from './grpc/Test'
 import DataManagementService from './grpc/DataManagementService'
-// import UserAuthService from './UserAuthService'
+import UserAuthService from './grpc/User'
 
 // Events
 import TestEvents from './events/Test'
@@ -35,9 +35,7 @@ asyncMain() -/>
   svcMgr.bind('envoy_auth', EnvoyAuth.bindings)
   svcMgr.bind('goodbye', Test.bindings)
   svcMgr.bind('data_management', DataManagementService.bindings)
-  // svcMgr.bind('userauth', {
-  //   'mesh.auth.UserAuthService': UserAuthService
-  // })
+  svcMgr.bind('userauth', UserAuthService.bindings)
 
   // Offer all bound services
   <- svcMgr.autoStart()

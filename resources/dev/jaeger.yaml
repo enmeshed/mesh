@@ -4,16 +4,28 @@ metadata:
   name: jaeger
   namespace: default
 spec:
-  strategy: allInOne # <1>
-  storage:
-    type: memory # <5>
-    options: # <6>
-      memory: # <7>
-        max-traces: 100000
-  ingress:
-    enabled: false # <8>
-  allInOne:
+  strategy: production # <1>
+  collector:
+    maxReplicas: 1
+  query:
     options:
-      log-level: debug
       query:
         base-path: /jaeger
+  storage:
+    type: elasticsearch # <5>
+    options: # <6>
+      es:
+        server-urls: https://es-primary-es-http.default.svc:9200
+        tls:
+          ca: /es/certificates/ca.crt
+    secretName: jaeger-elasticsearch-secret
+  ingress:
+    enabled: false # <8>
+  volumeMounts: # <5>
+    - name: certificates
+      mountPath: /es/certificates/
+      readOnly: true
+  volumes:
+    - name: certificates
+      secret:
+        secretName: es-primary-es-http-certs-public
