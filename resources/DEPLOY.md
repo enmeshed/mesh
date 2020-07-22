@@ -1,26 +1,39 @@
 # Deployment from scratch
 
-## Development Infrastructure
+## Infrastructure
 
 If deploying in development, a working `minikube` is needed. On Windows:
 
-- Install WSL
-- Install Debian 18 in WSL
-- Install Docker inside Debian
-- Start Docker
+- Install WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
+- Install Ubuntu 18 in WSL
+- Install Node NVM inside Ubuntu: https://github.com/nvm-sh/nvm
+- Install Node: `nvm install vX.X.X`
+- Install Yarn: https://classic.yarnpkg.com/en/docs/install/#debian-stable
+- Install Docker inside Ubuntu: https://docs.docker.com/engine/install/ubuntu/
+- Install Helm: `https://helm.sh/docs/intro/install/`
+- Start Docker (save this to a script, you will need to run it on restarts):
+```
+#!/bin/bash
+
+sudo mkdir /sys/fs/cgroup/systemd
+sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+sudo service docker start
+```
 - Set up `miniube config`
   - Due to a `minikube` 1.11 bug, set `kubernetes-version` to 1.16
   - Set driver to `docker`
+```
+minikube config set driver docker
+minikube config set kubernetes-version 1.16.0
+```
 - `minikube start`
 - Configure addons:
 ```
-minikube addons disable default-storageclass
-minikube addons disable storage-provisioner
 minikube addons enable metrics-server
 minikube addons enable dashboard
 ```
 - Install NFS Provisioner (see below)
-- Install Helm: `https://helm.sh/docs/intro/install/`
+
 
 ## K8s Namespaces
 
@@ -104,6 +117,12 @@ minikube ssh
 sudo apt update && sudo apt install -y nfs-common
 ```
 
+Disable broken provisioner:
+```
+minikube addons disable default-storageclass
+minikube addons disable storage-provisioner
+```
+
 Apply provisioner resources:
 ```
 kubectl apply -f resources/dev/nfs-provisioner.yaml
@@ -113,6 +132,3 @@ Make it the default:
 https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/
 
 Add `storageclass.kubernetes.io/is-default-class: "true"` to annotations
-
-warning
-(combined from similar events): MountVolume.SetUp failed for volume "pvc-d6ae8f9c-e7cd-49c4-a0f5-0e6ec9727e2e" : mount failed: exit status 32 Mounting command: systemd-run Mounting arguments: --description=Kubernetes transient mount for /var/lib/kubelet/pods/8e70711e-05cf-4987-b234-617e31354f82/volumes/kubernetes.io~nfs/pvc-d6ae8f9c-e7cd-49c4-a0f5-0e6ec9727e2e --scope -- mount -t nfs -o vers=4.1 10.110.143.43:/export/pvc-d6ae8f9c-e7cd-49c4-a0f5-0e6ec9727e2e
