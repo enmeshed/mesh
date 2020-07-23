@@ -17,7 +17,6 @@ appVolume:
 
 # App container config
 appContainer:
-  image: "node:10.16.0"
   command: ["sh", "-c"]
   args: ['DEBUG="*,-ioredis:*" node /app/build/worker_io.js /app']
   resources: {}
