@@ -46,6 +46,7 @@ minikube ssh
 
 sudo mkdir /persistent_volumes
 sudo chmod 777 /persistent_volumes
+exit
 ```
 ```
 kubectl apply -f resources/dev/minikube-fixes/storage-provisioner.yaml
@@ -91,43 +92,126 @@ kubectl apply -f resources/dev/redis.yaml
 kubectl apply -f resources/dev/mysql.yaml
 ```
 
-## Database Users and Access
+## MySQL Users and Access
 
+- Deploy phpMyAdmin:
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install phpmyadmin bitnami/phpmyadmin -f resources/dev/helm/phpmyadmin.yaml
+```
+- Access phpMyAdmin: (use secret default/mysql-auth)
+```
+kubectl port-forward --namespace default svc/phpmyadmin 8080:80
+```
 - Create mysql user `app`
+```
+CREATE USER 'app'@'%' IDENTIFIED WITH mysql_native_password AS '***';GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FILE, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES, LOCK TABLES, REPLICATION CLIENT, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON *.* TO 'app'@'%' REQUIRE NONE WITH MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
+```
 - Create mysql databases `app` and `app_development`
+
+## Elasticsearch Users and Access
+
+- Deploy temporary Kibana instance for cluster admin tasks
+```
+kubectl apply -f resources/dev/kibana-internal.yaml
+```
+- Access temporary Kibana instance at https://localhost:5601 (use secret default/es-primary-es-elastic-user)
+```
+kubectl port-forward svc/kibana-internal-kb-http 5601:5601
+```
 - Create ES users `app` and `logging` with corresponding roles
+- Remove temporary kibana instance
+```
+kubectl delete -f resources/dev/kibana-internal.yaml
+```
 
+## Initial Build
+- Create initial full build, which will be deployed when containers are created:
+```
+yarn install
+cd gitops
+npm install
+cd ..
+yarn run build
+```
 
-- Apply ES and Kibana resources
-- Access Kibana and create Elasticsearch app user:
-  - Get `elastic` root password from secret `es-primary-es-elastic-user`
-  - `kubectl port-forward service/kibana-kb-http 5601`
-  - Access `localhost:5601` and enter the credentials
-  - Create `app` user under Settings; note password
-  - Create `log` user under Settings for Jaeger/logging infrastructure; note password
+- Give the container access to the gitops folder
+```
+minikube mount gitops:/gitops
+```
 
-### KubeDB
+## Core internal services
+- Create secrets for core services
+  - `development/injected-secrets` must contain:
+    - `MYSQL_PASSWORD`: password for the `app` user created above
+    - `ELASTICSEARCH_PASSWORD`: password for the `app` user created above
+    - `JWT_SIGNING_SECRET`: HS256 key for signing tokens
 
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: injected-secrets
+  namespace: development
+type: Opaque
+stringData:
+  MYSQL_PASSWORD: xxx
+  ELASTICSEARCH_PASSWORD: xxx
+  JWT_SIGNING_SECRET: xxx
+```
 
+- Deploy IO worker
+```
+helm install worker-io resources/charts/clusterapp -f resources/dev/helm/worker-io.yaml --namespace development
+```
 
-- Apply MySQL and Redis resources
-- Access MySQL and create MySQL app user
+## Ingress
+- Deploy Bowser, Envoy, and Envoy LB
+```
+kubectl apply -f resources/dev/bowser.yaml
+kubectl apply -f resources/dev/envoy-ingress.yaml
+kubectl apply -f resources/dev/envoy-local-loadbalancer.yaml
+```
 
-## 2. Dev Environment
+- Open channel into cluster (localhost:3000)
+```
+resources/port-forward.sh
+```
 
-- `kubectl apply -f` for all resources under `/resources/dev`
-- Helm charts:
--- `helm install goodbye resources/charts/clusterapp -f resources/dev/helm/goodbye.yaml --namespace development`
+## Logging
+- Create secrets for Jaeger
+  - `default/jaeger-elasticsearch-secret` must contain:
+    - `ES_USERNAME`: `logging`
+    - `ES_PASSWORD`: the password you created above
 
-## 3. Runtime
+- Deploy Jaeger
+```
+kubectl apply -f resources/dev/jaeger.yaml
+```
 
-- Mount gitops: `minikube mount /path/to/local/gitops:/gitops`
-- Enable tunneling: `minikube tunnel` (see https://minikube.sigs.k8s.io/docs/handbook/accessing/)
+- Deploy prod kibana
+```
+kubectl apply -f resources/dev/kibana.yaml
+```
+
+- Jaeger is now accessible at http://localhost:3000/jaeger
+
+## HTTP API
+- Deploy API worker
+```
+helm install api resources/charts/clusterapp -f resources/dev/helm/api.yaml --namespace development
+```
+
+## Runtime
+
 - Connect via proxy: `kubectl proxy --accept-hosts='.*'`
+- Connect via ingress: `resources/port-forward.sh`
 
-## 4. NFS Provisioner
+## Misc
 
-While PVCs are broken in Minikube, we need to use the NFS Provisioner to provide working PVCs:
+### NFS provisioner
+
+Alternative to minikube hostpath-provisioner.
 
 Install NFS in Minikube:
 ```
