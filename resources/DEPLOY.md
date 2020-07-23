@@ -6,6 +6,11 @@ If deploying in development, a working `minikube` is needed. On Windows:
 
 - Install WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
 - Install Ubuntu 20 in WSL
+- Set Git globals:
+```
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+```
 - Install Golang: https://golang.org/doc/install
 - Install Node NVM inside Ubuntu: https://github.com/nvm-sh/nvm
 - Install Node: `nvm install vX.X.X`
