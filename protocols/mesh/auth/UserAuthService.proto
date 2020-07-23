@@ -46,10 +46,9 @@ message NewUserResponse {
 }
 
 message GetUserRequest {
-  oneof operation {
-    string id = 1;
-    repeated string ids = 2;
-  }
+  // oneof operation
+  string id = 1;
+  repeated string ids = 2;
 }
 
 message GetUserResponse {
@@ -112,14 +111,13 @@ message SetUserRolesRequest {
 message SetUserRolesResponse {}
 
 message SetAbilitiesRequest {
-  oneof subject {
-    string userId = 1;
-    string roleId = 2;
-  }
-  oneof action {
-    repeated string removeAbilityIds = 3;
-    repeated mesh.auth.Ability addAbilities = 4;
-  }
+  // oneof subject
+  string userId = 1;
+  string roleId = 2;
+
+  // oneof action
+  repeated string removeAbilityIds = 3;
+  repeated mesh.auth.Ability addAbilities = 4;
 }
 
 message SetAbilitiesResponse {}

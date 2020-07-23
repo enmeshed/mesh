@@ -1,5 +1,5 @@
 import { withResources, Tracing, Origin, Protocols } from '@enmeshed/meshnode'
-import { verifySessionJwt } from '@mesh/credential'
+import { verifySessionJWT } from '@mesh/credential'
 import { SessionCache } from './SessionCache'
 
 cookie = require('cookie')
@@ -114,7 +114,7 @@ Check = withResources(
       return makeAnonymousResponse()
 
     // Decode JWT
-    [decodedToken, err] <!- verifySessionJwt(token, Config.required('jwt_signing_secret'))
+    [decodedToken, err] <!- verifySessionJWT(token, Config.required('jwt_signing_secret'))
 
     if err:
       log.info({ err }, "could not decode authentication token")

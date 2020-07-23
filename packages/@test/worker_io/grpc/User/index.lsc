@@ -254,6 +254,7 @@ resumeSession = withResources(
 markSession = withResources(
   {}
   markSession(deps, req) -/> {
+    {}
   }
 )
 
@@ -356,7 +357,7 @@ setUserRoles = withResources(
   }
 )
 
-setAbilites = withResources(
+setAbilities = withResources(
   {
     "UserAbility": "model:UserAbility"
     "RoleAbility": "model:RoleAbility"
@@ -437,7 +438,7 @@ export default {
       createRole
       deleteRole
       setUserRoles
-      setAbilites
+      setAbilities
       getUserSecurity
     }
   }
