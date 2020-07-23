@@ -93,6 +93,10 @@ kubectl apply -f resources/dev/mysql.yaml
 
 ## Database Users and Access
 
+- Create mysql user `app`
+- Create mysql databases `app` and `app_development`
+- Create ES users `app` and `logging` with corresponding roles
+
 
 - Apply ES and Kibana resources
 - Access Kibana and create Elasticsearch app user:
