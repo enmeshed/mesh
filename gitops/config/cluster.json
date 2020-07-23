@@ -70,7 +70,7 @@
       "type": "elasticsearch",
       "nodes": ["https://es-primary-es-http.default.svc:9200"],
       "user": "app",
-      "indexPrefix": "dev_",
+      "indexPrefix": "development_",
       "passwordSecretId": "ELASTICSEARCH_PASSWORD"
     }
   },
