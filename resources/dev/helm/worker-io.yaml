@@ -18,7 +18,10 @@ appVolume:
 # App container config
 appContainer:
   command: ["sh", "-c"]
-  args: ['DEBUG="*,-ioredis:*" node /app/build/worker_io.js /app']
+  args: ['DEBUG="*,-ioredis:*,-express*,-finalhandler" node /app/build/worker_io.js /app']
   resources: {}
   envMaps: []
   envSecrets: ["injected-secrets"]
+  healthCheck:
+    path: '/'
+    port: 8250

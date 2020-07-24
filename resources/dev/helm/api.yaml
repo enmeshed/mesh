@@ -18,7 +18,10 @@ appVolume:
 # App container config
 appContainer:
   command: ["sh", "-c"]
-  args: ['DEBUG="*" node /app/build/api.js /app']
+  args: ['DEBUG="*,-express*,-finalhandler" node /app/build/api.js /app']
   resources: {}
   # Inject ConfigMaps into the environment
   envMaps: []
+  healthCheck:
+    path: '/'
+    port: 8250

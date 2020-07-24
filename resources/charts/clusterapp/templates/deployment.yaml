@@ -46,6 +46,21 @@ spec:
             {{- range .Values.appContainer.args }}
             - {{ . | quote }}
             {{- end }}
+          {{- with .Values.appContainer.healthCheck }}
+          readinessProbe:
+            httpGet:
+              path: {{ .path | default "/" }}
+              port: {{ .port | default 8250 }}
+            periodSeconds: {{ .periodSeconds | default 10 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 5 }}
+            failureThreshold: {{ .livenessFailureThreshold | default 2 }}
+          startupProbe:
+            httpGet:
+              path: {{ .path | default "/" }}
+              port: {{ .port | default 8250 }}
+            failureThreshold: {{ .startupFailureThreshold | default 30 }}
+            periodSeconds: {{ .startupFailurePeriod | default 10 }}
+          {{- end }}
         - name: envoy
           image: {{ .Values.envoy.image | quote }}
           imagePullPolicy: IfNotPresent
