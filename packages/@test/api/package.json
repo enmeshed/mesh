@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@enmeshed/meshnode": "^0.1.0",
-    "why-is-node-running": "^2.1.0"
+    "why-is-node-running": "^2.1.0",
+    "generate-password": "^1.5.1"
   }
 }

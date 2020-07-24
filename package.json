@@ -11,7 +11,8 @@
     "build:webpack": "webpack --config config/webpack.config.prod.js",
     "build:libs": "lerna run --parallel build",
     "build:copy-protocols": "cp -R protocols gitops",
-    "build": "run-s build:libs build:webpack build:copy-protocols"
+    "build": "run-s build:libs build:webpack build:copy-protocols",
+    "dev:restart": "./resources/dev/dev-restart.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",

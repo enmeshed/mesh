@@ -111,7 +111,10 @@ Check = withResources(
     token = extractToken('mesh', headers, cookies)
     // No token = anonymous user
     if not token:
+      log.trace("no token, anonymous request")
       return makeAnonymousResponse()
+
+    log.trace("Check: got token", { token })
 
     // Decode JWT
     [decodedToken, err] <!- verifySessionJWT(token, Config.required('jwt_signing_secret'))
@@ -122,8 +125,6 @@ Check = withResources(
       // in actuality, this should fork on whether anonymous access is
       // allowed
       return makeDeniedResponse("invalid authentication token")
-
-    log.trace("Check: got token", { token })
 
     return makeAuthenticatedResponse(decodedToken.sub, decodedToken.session)
 )

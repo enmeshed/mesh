@@ -1,4 +1,7 @@
 import { withResources, fieldChecks } from '@enmeshed/meshnode'
+import { errors } from '@enmeshed/errors'
+
+generatePassword = require('generate-password')
 
 emailLogin = withResources(
   {
@@ -59,6 +62,66 @@ signup = withResources(
   } // getMigrations
 )
 
+bootstrap = withResources(
+  {
+    "svc": "grpc.client.protocol:mesh.auth.UserAuthService"
+    "DataManagementService": "grpc.client.protocol:mesh.data.DataManagementService"
+  }
+  bootstrap({svc, DataManagementService}, {body}, res): void -/> {
+    // Check for bootstrap security key
+    // XXX: randomize and factor out to k8s secret
+    if body?.bootstrapKey != "B00tstr4p":
+      throw new errors.UnknownError("unknown error")
+
+    // Perform initial DB migrations
+    log.info('bootstrapping db migrations')
+    <- DataManagementService.doMigrations({
+      migrations: ['elasticsearch', 'mysql']
+    })
+
+    // Make root user. (Process will fail here if user exists)
+    log.info('creating root user')
+    root_user = 'root@mesh.local'
+    root_pass = generatePassword.generate({length: 10})
+    { id: suid } <- svc.newUser({
+      credential: {
+        identification: root_user
+        password: root_pass
+      }
+      payload: {
+        fullName: 'root'
+        noTriggers: true
+      }
+    })
+
+    // Make superuser role
+    log.info('creating superuser role')
+    { id: suRoleId } <- svc.createRole({ name: 'superuser' })
+
+    // Add superuser ability to superuser role
+    log.info('adding superuser ability to superuser role')
+    <- svc.setAbilities({
+      roleId: suRoleId
+      addAbilities: [
+        { object: '*', verb: 'administer' }
+      ]
+    })
+
+    // Add superuser role to superuser
+    log.info('adding superuser role to superuser')
+    <- svc.setUserRoles({
+      userId: suid
+      addRoleIds: [suRoleId]
+    })
+
+    res.json({
+      identification: root_user
+      password: root_pass
+    })
+  } // bootstrap
+)
+
 export default (router) ->
   router.async('post', '/login/email', emailLogin)
   router.async('post', '/signup/full', signup)
+  router.async('post', '/bootstrap', bootstrap)

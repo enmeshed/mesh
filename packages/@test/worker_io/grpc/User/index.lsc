@@ -34,6 +34,7 @@ newUser = withResources(
       credential: { identification: email, password }
       payload: {
         fullName, createBillingAccount, referralCode, offerCode, propertyId
+        noTriggers
       }
     } = req
     now email = email.toLowerCase()
@@ -62,7 +63,8 @@ newUser = withResources(
     <- Credential.create(cred)
 
     // Fire system event
-    events.fire('user.new', { userId: user.id })
+    if not noTriggers:
+      events.fire('user.new', { userId: user.id })
 
     // Response buffer
     {
@@ -321,33 +323,40 @@ setUserRoles = withResources(
     "UserRole": "model:UserRole"
   }
   setUserRoles({ svc, UserRole }, req) -/> {
+    // Get current user roles
     user <- svc.getUser({ id: req.userId })
-
-    // Determine needed changes
-    { roleIds: targetRoleIds } = req
     { roleIds: currentRoleIds } = user
 
-    addedRoleIds = targetRoleIds.filter(
-      (targetRoleId) -> currentRoleIds.indexOf(targetRoleId) == -1
-    )
-    deletedRoleIds = currentRoleIds.filter(
-      (currentRoleId) -> targetRoleIds.indexOf(currentRoleId) == -1
-    )
+    let addRoleIds = req.addRoleIds or []
+    let removeRoleIds = if req.removeRoleIds?.length > 0:
+      req.removeRoleIds.filter((id) -> currentRoleIds.indexOf(id) > -1)
+    else:
+      []
+
+    if req.setRoleIds:
+      { setRoleIds: targetRoleIds } = req
+
+      now addRoleIds = targetRoleIds.filter(
+        (targetRoleId) -> currentRoleIds.indexOf(targetRoleId) == -1
+      )
+      now removeRoleIds = currentRoleIds.filter(
+        (currentRoleId) -> targetRoleIds.indexOf(currentRoleId) == -1
+      )
 
     // Quit if no change
-    if (addedRoleIds.length == 0) and (deletedRoleIds.length == 0):
+    if (addRoleIds.length == 0) and (removeRoleIds.length == 0):
       return {}
 
     // Delete deleted roles
-    deletePromise = if deletedRoleIds.length > 0:
+    deletePromise = if removeRoleIds.length > 0:
       q = UserRole.createQuery()
-      q.where(q.In('roleId', deletedRoleIds))
+      q.where(q.In('roleId', removeRoleIds))
       UserRole.destroyByQuery(q)
     else:
       Promise.resolve(null)
 
     // Add added roles
-    insertPromises = [...for elem addedRoleId in addedRoleIds:
+    insertPromises = [...for elem addedRoleId in addRoleIds:
       [UserRole.create({ userId: user.id, roleId: addedRoleId })]
     ]
 

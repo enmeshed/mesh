@@ -104,8 +104,17 @@ message DeleteRoleRequest {
 message DeleteRoleResponse {}
 
 message SetUserRolesRequest {
+  // User to modify
   string userId = 1;
-  repeated string roleIds = 2;
+
+  ///// oneof action
+  repeated string roleIds = 2; // deprecated
+  // Role IDs to add
+  repeated string addRoleIds = 3;
+  // Role IDs to remove
+  repeated string removeRoleIds = 4;
+  // Set list of role IDs to exact list
+  repeated string setRoleIds = 5;
 }
 
 message SetUserRolesResponse {}
