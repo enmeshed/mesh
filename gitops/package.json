@@ -2,13 +2,13 @@
   "name": "gitops",
   "license": "UNLICENSED",
   "dependencies": {
-    "@enmeshed/node-control-plane": "^0.2.7",
-    "@enmeshed/grpc": "^1.0.0",
-    "@enmeshed/protobuf": "^1.0.0",
+    "@enmeshed/node-control-plane": "^0.2.8",
+    "@enmeshed/grpc": "^1.0.1",
+    "@enmeshed/protobuf": "^1.0.1",
     "kafkajs": "^1.12.0",
     "mysql2": "^2.1.0",
     "express": "^4.17.1",
-    "jaeger-client": "^3.18.0",
+    "@enmeshed/jaeger-client": "^3.18.0",
     "ioredis": "^4.17.3",
     "@elastic/elasticsearch": "^7.8.0",
     "bull": "^3.16.0"

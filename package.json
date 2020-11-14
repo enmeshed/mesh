@@ -12,7 +12,8 @@
     "build:libs": "lerna run --parallel build",
     "build:copy-protocols": "cp -R protocols gitops",
     "build": "run-s build:libs build:webpack build:copy-protocols",
-    "dev:restart": "./resources/dev/dev-restart.sh"
+    "dev:restart": "./resources/dev/dev-restart.sh",
+    "dev:push": "run-s build dev:restart"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",

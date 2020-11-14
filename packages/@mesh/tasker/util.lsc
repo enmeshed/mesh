@@ -1,0 +1,39 @@
+export nextCheckTimeForSchedule(sched, isFirstTime) ->
+  t = Date.now()
+
+  once = sched.once
+  if once:
+    if not isFirstTime:
+      return [null, 'DONE']
+    if once.at:
+      return [once.at, 'ONCE']
+    else:
+      return [t + once.in, 'ONCE']
+
+  repeat = sched.repeat
+  if not repeat: throw new Error("Schedule must be `once` or `repeat`")
+  if repeat.cron:
+    throw new Error("Support for cron expressions is not yet implemented")
+
+  if isFirstTime:
+    start = if repeat.delay: t + repeat.delay
+    elif repeat.startAt: repeat.startAt
+    else: t
+
+    return [start, 'REPEAT']
+
+  if repeat.endAt and (repeat.endAt < t):
+    return [null, 'DONE']
+
+  if repeat.every:
+    return [t + repeat.every, 'REPEAT']
+
+  throw new Error("Invalid mesh.task.Schedule")
+
+export checkPresenceOfCallback(callback) ->
+  if callback?.grpc?.target: return callback
+  if callback?.job?.jobName: return callback
+  if callback?.event?.eventName: return callback
+  if callback?.webhook?.url: return callback
+
+  return null

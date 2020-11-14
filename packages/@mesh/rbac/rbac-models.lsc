@@ -1,0 +1,75 @@
+import { entity, field, types, Entity } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+import { ModelManager } from '@enmeshed/meshnode'
+
+// RBAC roles
+@entity({name: "Role", inherits: [Timestamped]})
+class Role extends Entity:
+  @field(types.string) id = -> `role_${cuid()}`
+  // Role readable name
+  @field(types.string) name = undefined
+
+// Map from users to roles
+@entity({name: "UserRole"})
+class UserRole extends Entity:
+  // Associated user
+  @field(types.string) userId = undefined
+  // Associated role
+  @field(types.string) roleId = undefined
+
+@entity({name: "Ability"})
+class Ability extends Entity:
+  // Object type of the ability
+  @field(types.string) object = undefined
+  // Object id of the ability
+  @field(types.string) objectId = undefined
+  // Verb
+  @field(types.string) verb = undefined
+  // Extra data
+  @field(types.json) extra = undefined
+
+  toAbilityProtobuf() -> {
+    id: this.id
+    object: this.object
+    objectId: this.objectId
+    verb: this.verb
+    payload: this.extra
+  }
+
+// Map from roles to abilities
+@entity({name: "RoleAbility"})
+class RoleAbility extends Ability:
+  @field(types.string) id = -> `ra_${cuid()}`
+  // Associated role
+  @field(types.string) roleId = undefined
+
+ModelManager.bindAll({
+  'Role': {
+    model: Role
+    backend: 'mysql'
+  }
+  'UserRole': {
+    model: UserRole
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['userId'] }
+        { columnNames: ['roleId'] }
+      ]
+    }
+  }
+  'RoleAbility': {
+    model: RoleAbility
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['roleId'] }
+        { columnNames: ['object'] }
+        { columnNames: ['objectId'] }
+      ]
+    }
+  }
+})
+
+export { Role, UserRole, RoleAbility }

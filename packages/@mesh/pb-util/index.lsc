@@ -1,0 +1,67 @@
+// Convert a single found object into a GenericResultSet
+export toFindOneResult(foundObject) ->
+  if foundObject:
+    {
+      result_count: 1
+      results: foundObject
+    }
+  else:
+    {
+      result_count: 0
+      results: []
+    }
+
+// Expose a simple array of results, non-paginated
+export toSimpleResults(results) ->
+  {
+    result_count: results.length
+    results
+  }
+
+// Normalize pagination limits. This sets somewhat arbitrary defaults of 25
+// per page and 1000 per page max.
+export normalizeLimit(limit, defaultLimit = 25, maxLimit = 1000) ->
+  if typeof(limit) != 'number': return defaultLimit
+  if limit < 1: return defaultLimit
+  if limit > maxLimit: return maxLimit
+  limit
+
+// Normalize pagination offsets.
+export normalizeOffset(offset) ->
+  if typeof(offset) != 'number': return 0
+  offset
+
+export paginationTokenToLimits(pt, defaultLimit) ->
+  if not pt:
+    { offset: 0, limit: normalizeLimit(0, defaultLimit), total: 0 }
+  else:
+    { offset, page_size: limit, total_results: total } = pt
+
+export limitsToPagination(offset, limit, total, hasMore = true, nextOffset) -> {
+  page_size: limit
+  page_index: Math.floor(offset / limit)
+  total_results: total
+  total_pages: Math.ceil(total / limit)
+  next_page_token:
+    {
+      token_type: 'LIMITS'
+      more: hasMore
+      offset: nextOffset or 0
+      page_size: limit
+      total_results: total
+    }
+}
+
+export toPagedResults(results, prevCursor, nextCursor) -> {
+  {
+    result_count: results.length
+    results
+    pagination: limitsToPagination(
+      prevCursor.offset
+      nextCursor.limit or prevCursor.limit
+      nextCursor.total or prevCursor.total
+      if nextCursor: true else: false
+      if nextCursor: nextCursor.offset else: 0
+    )
+  }
+}

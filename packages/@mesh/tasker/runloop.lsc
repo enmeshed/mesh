@@ -1,0 +1,172 @@
+// Tasker run loop.
+import cuid from 'cuid'
+import { Job } from '@enmeshed/meshnode'
+import { nextCheckTimeForSchedule } from './util'
+import { Container, Provider } from '@enmeshed/alpha'
+
+shuffle = require('shuffle-array')
+
+// TODO: Config
+livenessIntervalMs = 30 * 1000
+zombieWindowSizeMS = 1 * 24 * 60 * 60 * 1000
+concurrency = 3
+runLoopIntervalMS = 10 * 1000
+
+class TaskerRunLoop extends Provider {
+  static providerName = "tasker.runloop"
+  static dependencies = {
+    Task: "model:TaskSchedule"
+    TaskLog: "model:TaskExecutionLog"
+    DistributedLockService: "grpc.client.protocol:mesh.dtx.DistributedLockService"
+    Node: "node"
+    Jobs: "jobs"
+    Events: "events"
+  }
+
+  lastRunLoopTurn = Date.now()
+
+  runLoopLivenessCheck() => {
+    if (Date.now() - this.lastRunLoopTurn) > livenessIntervalMs:
+      log.error(`Tasker runloop dead for ${livenessIntervalMs} ms, crashing`)
+      this.Node.stopNode(128)
+  } // runLoopLivenessCheck()
+
+  runLoop() => {
+    this.runLoopCore()
+      .then(=>
+        this.lastRunLoopTurn = Date.now()
+      )
+      .catch((err) =>
+        log.error({err}, 'Tasker runloop threw an error, crashing')
+        this.Node.stopNode(128)
+      )
+  } // runLoop()
+
+  runLoopCore() -/> {
+    { Task } = this
+    // Search for tasks waiting to be run
+    endDate = new Date()
+    startDate = new Date(Date.now() - zombieWindowSizeMS)
+    q = Task.createQuery()
+    q.where(q.And(
+      q.Eq('state', 'WAITING')
+      q.Op('nextCheck', '>', startDate)
+      q.Op('nextCheck', '<=', endDate)
+    ))
+    rst <- Task.find(q)
+    tasks = rst.getResults() or []
+
+    // Nothing to do
+    if tasks.length == 0: return
+
+    // Shuffle them and pick
+    pickedTasks = if tasks.length <= concurrency:
+      tasks
+    else:
+      shuffle.pick(tasks, { picks: concurrency })
+
+    // Exceute
+    <- [...for elem task in pickedTasks: [this.runTask(task)]]
+  } // runLoopCore()
+
+  runTask(task) -/> {
+    { runnable, callback, id: taskId, description } = task
+    { DistributedLockService, Task, TaskLog } = this
+
+    // Obtain lock on task. If we can't, abort with OK status assuming
+    // another node has grabbed it
+    let lock = {}
+    try:
+      now lock <- DistributedLockService.acquireLock({
+        object: {
+          type: 'task'
+          id: taskId
+        }
+        lockTimeoutSeconds: 5
+        retryTimeoutSeconds: 0
+      })
+    catch err:
+      log.trace( {err}, 'Lock contention in runTask for task', taskId, description)
+      return
+
+    try:
+      // Place task in RUNNING state, and update next Check time to
+      // the appropriate time in the future for repeating events.
+      taskEntity <- Task.findById(taskId)
+      taskEntity.setState('RUNNING')
+
+      [nextCheckTime] = nextCheckTimeForSchedule(taskEntity.schedule, false)
+      taskEntity.nextCheck = if nextCheckTime: new Date(nextCheckTime) else: null
+      <- taskEntity.save()
+
+      // Add execution log entry
+      runId = cuid()
+      <- TaskLog.create({
+        taskId
+        runId
+        logType: 'RUN'
+      })
+
+      // Execute the Runnable
+      disposition <- this.runRunnable({taskId, runId}, runnable, callback)
+      // If the runnable was fire-and-forget, return the task to the
+      // run queue (if repeating) or set done state (if done)
+      if disposition.fireAndForget or disposition.noop:
+        if nextCheckTime:
+          taskEntity.setState('WAITING')
+        else:
+          taskEntity.setState('DONE')
+        <- taskEntity.save()
+
+    finally:
+      DistributedLockService.releaseLock(lock).catch(err -> log.error({err}, "Error releasing distributed lock on task"))
+  } // runTask()
+
+  runRunnable(ctx, runnable, callback) -/> {
+    match runnable:
+      | ~looseEq(null):
+        return { noop: true }
+      | .event as { event: { eventName }, args }:
+        log.trace('runRunnable: firing event', eventName)
+        this.Events.fire(eventName, args)
+        return { fireAndForget: true }
+      | .job as { job: { jobQueueName }, args }:
+        log.trace('runRunnable: enqueuing job on', jobQueueName)
+        this.runJob(ctx, jobQueueName, args, callback)
+      | .grpc as { grpc: { target }, args }:
+        log.trace('runRunnable: enqueueing grpc job')
+        this.runJob(ctx, 'tasker.job', {
+          type: "grpc"
+          grpcEndpoint: target
+          args
+        }, callback)
+      | else:
+        return { noop: true }
+  } // runRunnable()
+
+  runJob({taskId, runId}, queueName, args, callback) -/> {
+    job = new Job()
+    job.setQueueName(queueName)
+    jobData = Object.assign({}, args)
+    jobData["@@tasker"] = { taskId, runId, callback: if callback: callback.toJSON() }
+    job.setData(args)
+    log.trace('runJob: enqueueing job on', queueName)
+    <- this.Jobs.enqueue(job)
+
+    // For job-based Runnables, keep in Running state until job finishes.
+    return {}
+  } // runJob()
+
+  init(): void -/> {
+    Container.retain(this)
+    this.runLoopInterval = setInterval(this.runLoop, runLoopIntervalMS)
+  } // init()
+
+  destroy(): void -/> {
+    if this.runLoopInterval:
+      clearInterval(this.runLoopInterval)
+      this.runLoopInterval = null
+  }
+} // class TaskerRunLoop
+
+Container.provide(TaskerRunLoop)

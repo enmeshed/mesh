@@ -7,12 +7,15 @@ import "mesh/PaginationToken.proto";
 
 message GenericQuery {
   // Query parameters
-  google.protobuf.Struct query_params = 1;
+  google.protobuf.Struct args = 1;
+
+  // Sorting parameters
+  google.protobuf.Struct order = 2;
 
   // Maximum number of results to return to the client per page
-  int32 page_size = 2;
+  uint32 page_size = 3;
 
   // To resume a query from a prior page, pass in the pagination token
   // returned by that query.
-  mesh.PaginationToken pagination_token = 3;
+  PaginationToken pagination_token = 4;
 }

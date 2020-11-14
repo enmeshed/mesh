@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package mesh.task;
+
+import "mesh/GrpcEndpoint.proto";
+import "google/protobuf/Struct.proto";
+
+// Describe an executable object on the mesh.
+message Runnable {
+  message GrpcCall {
+    // gRPC endpoint to be called
+    GrpcEndpoint target = 1;
+  }
+
+  message Job {
+    // Job queue to add the job to
+    string jobQueueName = 1;
+  }
+
+  message Event {
+    // Event name to be fired
+    string eventName = 1;
+  }
+
+  message Webhook {
+    // URL to be invoked
+    string url = 1;
+    // Method (GET or POST)
+    string method = 2;
+  }
+
+  oneof runType {
+    GrpcCall grpc = 1;
+    Job job = 2;
+    Event event = 3;
+    Webhook webhook = 4;
+  }
+
+  // Args to be passed. How these are handled varies based on callback type.
+  google.protobuf.Struct args = 5;
+}

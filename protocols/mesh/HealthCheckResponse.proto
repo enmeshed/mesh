@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package mesh;
+
+message HealthCheckResponse {
+  bool healthy = 1;
+}

@@ -7,11 +7,13 @@ import "mesh/PaginationToken.proto";
 
 message Pagination {
   // Max number of entries per page
-  int32 page_size = 1;
+  uint32 page_size = 1;
   // Index of this page amongst pages
-  int32 page_index = 2;
+  uint32 page_index = 2;
+  // Total number of results available
+  uint32 total_results = 3;
   // Total number of pages available
-  int32 total_pages = 3;
+  uint32 total_pages = 4;
   // Implementation-specific token to retrieve the next page
-  mesh.PaginationToken next_page_token = 4;
+  PaginationToken next_page_token = 5;
 }

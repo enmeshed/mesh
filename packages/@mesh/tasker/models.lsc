@@ -1,0 +1,75 @@
+import { entity, field, types, Entity } from '@ormojo/ephraim'
+import { Timestamped } from '@ormojo/ormojo'
+import cuid from 'cuid'
+import { ModelManager } from '@enmeshed/meshnode'
+
+// Master task schedule
+@entity({name: "TaskSchedule", inherits: [Timestamped]})
+class TaskSchedule extends Entity:
+  @field(types.string) id = -> `task_${cuid()}`
+  // Human readable description
+  @field(types.text) description = undefined
+  // Time when this task will be executed next
+  @field(types.date) nextCheck = undefined
+  // Time of the last state change for this task
+  @field(types.date) lastStateChange = undefined
+  // Task state
+  // "WAITING" = scheduled in the future, waiting to be enqueued
+  // "RUNNING" = run loop has picked up the task and it is executing
+  // "DONE" = task has reached its designated end time and is stopped
+  // "DEAD" = task will no longer execute due to being killed or system error
+  @field(types.string) state = "DEAD"
+  // Schedule type
+  @field(types.string) scheduleType = "ONCE"
+  // JSON schedule data
+  @field(types.json) schedule = undefined
+  // JSON runnable data
+  @field(types.json) runnable = undefined
+  // JSON callback data
+  @field(types.json) callback = undefined
+
+  setState(state): boolean ->
+    if this.state != state:
+      this.state = state
+      this.lastStateChange = new Date()
+      true
+    else:
+      false
+
+  isRepeating(): boolean ->
+    if this.schedule?.repeat: true else: false
+
+// Task execution log
+@entity({name: "TaskExecutionLog", inherits: [Timestamped]})
+class TaskExecutionLog extends Entity:
+  @field(types.string) id = -> `tasklog_${cuid()}`
+  @field(types.string) taskId = undefined
+  @field(types.string) runId = undefined
+  @field(types.string) logType = 'MESSAGE'
+  @field(types.json) payload = undefined
+
+
+ModelManager.bindAll({
+  "TaskSchedule": {
+    model: TaskSchedule
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['nextCheck'] }
+        { columnNames: ['state'] }
+      ]
+    }
+  }
+  "TaskExecutionLog": {
+    model: TaskExecutionLog
+    backend: 'mysql'
+    bindings: {
+      indices: [
+        { columnNames: ['taskId'] }
+        { columnNames: ['runId'] }
+      ]
+    }
+  }
+})
+
+export { TaskSchedule, TaskExecutionLog }

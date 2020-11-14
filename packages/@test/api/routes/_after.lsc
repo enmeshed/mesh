@@ -1,0 +1,14 @@
+import { CommonError, PlainObjectMarshal } from '@enmeshed/errors'
+
+isProd = (IS_BUILDING_FOR_PRODUCTION == true)
+
+export default (router) ->
+  router.use(commonErrorMiddleware(err, req, res, next) ->
+    if err instanceof CommonError:
+      marshal = new PlainObjectMarshal()
+      json = marshal.marshalError(err, isProd)
+      json.isProduction = isProd
+      res.status(err.httpStatus).json(json)
+
+    next(err)
+  )

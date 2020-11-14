@@ -19,31 +19,6 @@ export bindings = {
       ]
     }
   }
-  'Role': {
-    model: Role
-    backend: 'mysql'
-  }
-  'UserRole': {
-    model: UserRole
-    backend: 'mysql'
-    bindings: {
-      indices: [
-        { columnNames: ['userId'] }
-        { columnNames: ['roleId'] }
-      ]
-    }
-  }
-  'RoleAbility': {
-    model: RoleAbility
-    backend: 'mysql'
-    bindings: {
-      indices: [
-        { columnNames: ['roleId'] }
-        { columnNames: ['object'] }
-        { columnNames: ['objectId'] }
-      ]
-    }
-  }
   'UserAbility': {
     model: UserAbility
     backend: 'mysql'
@@ -71,7 +46,7 @@ export bindings = {
     bindings: {
       indices: [
         { columnNames: ['subjectId', 'accountType'], unique: true }
-        { columnNames: ['paymentProcessor', 'paymentProcessorKey'] }
+        { columnNames: ['paymentProcessor', 'paymentProcessorAccountKey'] }
       ]
     }
   }

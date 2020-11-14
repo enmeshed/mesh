@@ -1,0 +1,141 @@
+import { Protocols, withResources } from '@enmeshed/meshnode'
+import { errors } from '@enmeshed/errors'
+
+deferred = require('p-defer')
+
+Protocols.require('mesh/dtx/DistributedLockService.proto')
+
+lockIdFromLockedObject(obj) ->
+  if typeof(obj) != 'object':
+    throw new errors.MissingArgumentError("LockedObject")
+  {id, type} = obj
+  if id and type:
+    `lock.${type}_${id}`
+  else if id:
+    `lock.${id}`
+  else:
+    throw new errors.InvalidArgumentError("LockedObject", "id is requred")
+
+class LockAcquisitionState:
+  redis = null // Redis client
+  lockId = '' // String id for lock
+  lockData = 'lock' // Value to store associated with the lock (may describe lock holder, etc)
+  retryTimeout = 0 // If greater than 0, retry for this many MS
+  retryDelay = 500 // Delay in ms between retries
+  retryEnd = 0 // Time at which retrying will end
+  leaseDuration = 1000 // Length of lease on lock
+  deferred = null // Promise for when lock is ready or failed
+
+  constructor(redis, lockId, leaseDuration, retryTimeout) ->
+    this.redis = redis
+    this.lockId = lockId
+    this.leaseDuration = leaseDuration
+    this.retryTimeout = retryTimeout
+    if retryTimeout > 0:
+      this.retryEnd = Date.now() + retryTimeout
+    this.deferred = deferred()
+
+  getPromise() -> this.deferred.promise
+
+  shouldRetry(): boolean ->
+    this.retryTimeout > 0
+    and Date.now() < this.retryEnd
+
+  maybeRetry(): boolean ->
+    if (this.retryTimeout == 0) or (this.retryDelay == 0): return false
+    if Date.now() > this.retryEnd: return false
+
+    setTimeout(
+      => tryAcquireLock_reentrant(this)
+      this.retryDelay
+    )
+
+    return true
+
+  reportLockAlreadyHeld(): void ->
+    this.deferred.resolve({acquired: false, reason: 'LOCK_ALREADY_HELD', state: this})
+
+  reportLockAcquired(expires): void ->
+    this.deferred.resolve({acquired: true, expires, state: this})
+
+  reportErrorAcquiringLock(err): void ->
+    this.deferred.reject(err)
+
+tryAcquireLock_reentrant(state): void ->
+  trueExpire = Date.now() + state.leaseDuration + 1
+  state.redis.set(
+    state.lockId
+    state.lockData
+    'PX'
+    state.leaseDuration
+    'NX'
+    (err, result): void ->
+      if state.maybeRetry(): return
+
+      if result == null:
+        state.reportLockAlreadyHeld()
+      elif err:
+        state.reportErrorAcquiringLock(err)
+      else:
+        state.reportLockAcquired(trueExpire)
+  )
+
+tryAcquireLock(redis, lockId, lockTimeoutSeconds, retryTimeoutSeconds) ->
+  state = new LockAcquisitionState(redis, lockId, lockTimeoutSeconds * 1000, retryTimeoutSeconds * 1000)
+  tryAcquireLock_reentrant(state)
+  state.getPromise()
+
+acquireLock = withResources(
+  {
+    redis: "redis.named.connection:locking"
+  }
+  acquireLock({ redis }, { object, lockTimeoutSeconds, retryTimeoutSeconds }) -/> {
+    lockId = lockIdFromLockedObject(object)
+    if lockTimeoutSeconds <= 0:
+      throw new errors.InvalidArgumentError("lockTimeoutSeconds", "must be greater than 0")
+    if retryTimeoutSeconds < 0:
+      throw new errors.InvalidArgumentError("retryTimeoutSeconds", "must be 0 or higher")
+
+    res <- tryAcquireLock(redis, lockId, lockTimeoutSeconds, retryTimeoutSeconds)
+
+    if res.acquired:
+      return {
+        lock: {
+          id: lockId
+          lockedObject: object
+          expires: res.expires
+        }
+      }
+    else:
+      throw new errors.UnavailableError()
+  }
+)
+
+releaseLock = withResources(
+  {
+    redis: "redis.named.connection:locking"
+  }
+  releaseLock({ redis }, { lock }) -/> {
+    // We are forgiving on what we accept here, so clients can call release
+    // in `finally` blocks without needing lock data
+    if (not lock) or (not lock.id): return {}
+
+    def = deferred()
+
+    if lock.expires > Date.now():
+      redis.del(lock.id, -> def.resolve({}))
+    else:
+      def.resolve({})
+
+    def
+  }
+)
+
+export default {
+  bindings: {
+    "mesh.dtx.DistributedLockService": {
+      acquireLock
+      releaseLock
+    }
+  }
+}

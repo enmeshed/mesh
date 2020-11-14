@@ -899,18 +899,18 @@
     pump "^3.0.0"
     secure-json-parse "^2.1.0"
 
-"@enmeshed/alpha@^0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@enmeshed/alpha/-/alpha-0.5.0.tgz#43cd40ef6a1d0f5914b32e53618a85f743041d72"
-  integrity sha512-gDK44FDPWdOpinhpm0E0QkRDBUM4goU5tPxWp8FHMTBzI61oojfw+bKLVwX2nFjkieBinniOKxMImvdmZPWjjg==
+"@enmeshed/alpha@^0.5.4":
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/@enmeshed/alpha/-/alpha-0.5.4.tgz#bda3f5dc098eb7dfc40078edd473d20ca7d13460"
+  integrity sha512-eQrzwpO3cW3411tLAp3u4OwAZCmr/Hp4TclKrInklZLB6UkLlSVLYtxuo5y1Uz/TG5JTctXeAdr3rxiPLnxApg==
   dependencies:
-    "@enmeshed/errors" "^1.0.6"
+    "@enmeshed/errors" "^1.1.1"
     p-defer "^3.0.0"
 
-"@enmeshed/errors@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@enmeshed/errors/-/errors-1.0.6.tgz#2594bed0f8c031c31893dc20aeb9255737610acb"
-  integrity sha512-ljKddIvXbklecoKhbGuqLsVuVrKaw3jTIa54YfZsxx9sZ+Xn1DHUhw4cJszS+1xTZXO9VTOF76p1FCGTbWZ09Q==
+"@enmeshed/errors@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@enmeshed/errors/-/errors-1.1.1.tgz#9a75fa6219917ed068b943d4fc2964d7ae80c586"
+  integrity sha512-CgNyBdbLdjAxWtEqJBa19ZmzwCGsY7+M1GH7zng1ZmJOHMjKHaymMX/5R1W8OgWV+nWZn37ORbZai0HrApjNHg==
   dependencies:
     is-buffer "^2.0.4"
 
@@ -923,6 +923,27 @@
     "@grpc/grpc-js" "^1.1.2"
     debug "^4.1.1"
     p-defer "^3.0.0"
+
+"@enmeshed/grpc@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@enmeshed/grpc/-/grpc-1.0.1.tgz#39591d290ea2a94b618df4d8dfee4ff726b3e45b"
+  integrity sha512-l/Z8cA9dc+/XxTJyHvjDGjfU1FlCiuJzoNsqxQq/3f/v306+qFyf6acUkHteUG9DwYnVbk2T/6bjYhSzDw8Qrw==
+  dependencies:
+    "@enmeshed/protobuf" "^1.0.1"
+    "@grpc/grpc-js" "^1.1.2"
+    debug "^4.1.1"
+    p-defer "^3.0.0"
+
+"@enmeshed/jaeger-client@^3.18.0":
+  version "3.18.0"
+  resolved "https://registry.yarnpkg.com/@enmeshed/jaeger-client/-/jaeger-client-3.18.0.tgz#16b0d34bfd35b18118378f4973dd2374d8d5bb9b"
+  integrity sha512-m1VPbFoRqg2uVC1ab4bre3gRfnszM1xtWFjy/N6q2iHUZnD/mHNgYS02Lubm4Pb3JiBRyLcDY4QuCss7K5wopw==
+  dependencies:
+    node-int64 "^0.4.0"
+    opentracing "^0.14.4"
+    thriftrw "^3.5.0"
+    uuid "^3.2.1"
+    xorshift "^0.2.0"
 
 "@enmeshed/mesh-reflection-file-watcher@^0.2.2":
   version "0.2.2"
@@ -954,6 +975,16 @@
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@enmeshed/protobuf/-/protobuf-1.0.0.tgz#92ccb9a33c2df9f700a594b96bc94021a79b98ad"
   integrity sha512-AVdivJ6ItvHA+pUhrpkdqa9w6TV47EIDZxcHyBDahC/7/MRhPjfmiDdytwe/lnP6iEQn0rU5ht2tYl91lY8EeQ==
+  dependencies:
+    debug "^4.1.1"
+    lodash.camelcase "^4.3.0"
+    p-defer "^3.0.0"
+    protobufjs "^6.10.1"
+
+"@enmeshed/protobuf@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@enmeshed/protobuf/-/protobuf-1.0.1.tgz#a817332fccc8c18484cc77f4656a8770622e0dc7"
+  integrity sha512-iFtVglgNQYQvVpyrSpGwi9IdiMoL1D8PkkyWuvKrmVADb7WLWnLhtbz/mzVdDisrmdIS1GBdA36wGBdAbpzPxA==
   dependencies:
     debug "^4.1.1"
     lodash.camelcase "^4.3.0"
@@ -1865,10 +1896,10 @@
   dependencies:
     symbol-observable "^1.1.0"
 
-"@ormojo/mysql@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@ormojo/mysql/-/mysql-0.3.0.tgz#ed08d86718c15595010eecdf510afb39cc8e3614"
-  integrity sha512-DOTGbwSJq7zdD0NHUUCvjDaztzqBRtGo6uqGG2wzGOrCPQKod4EC/s2wuACPLCKaiq0PAIAq6bERF4v5AVC8fg==
+"@ormojo/mysql@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@ormojo/mysql/-/mysql-0.3.1.tgz#91fd41062a712354d8cbd9a427e0e4f1d985f53b"
+  integrity sha512-p9Uz6788oScMJWZdDc+dN34hjlXENXwVTizA9hCvofXeKOWsgj283F+6xIwfNQppoZvElz73DLRohT/0auIHkQ==
   dependencies:
     "@ormojo/ephraim" "^1.0.0"
     "@ormojo/ormojo" "^1.0.0"
@@ -5409,17 +5440,6 @@ isstream@~0.1.2:
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha1-R+Y/evVa+m+S4VAOaQ64uFKcCZo=
 
-jaeger-client@^3.18.0:
-  version "3.18.0"
-  resolved "https://registry.yarnpkg.com/jaeger-client/-/jaeger-client-3.18.0.tgz#95c9183e06a9b14b957bce33b5e2ddaecb2ed51f"
-  integrity sha512-xZ9WvZDWLkZFq7SObpLwu1asMCKCgBRNcDxxGSvK+ZQ7OZyJC5xPlU+rJa4+s/P6autPBVwHpqMGbOERFxWuuA==
-  dependencies:
-    node-int64 "^0.4.0"
-    opentracing "^0.14.4"
-    thriftrw "^3.5.0"
-    uuid "^3.2.1"
-    xorshift "^0.2.0"
-
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -7851,6 +7871,11 @@ shell-quote@^1.6.1:
     array-map "~0.0.0"
     array-reduce "~0.0.0"
     jsonify "~0.0.0"
+
+shuffle-array@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/shuffle-array/-/shuffle-array-1.0.1.tgz#c4ff3cfe74d16f93730592301b25e6577b12898b"
+  integrity sha1-xP88/nTRb5NzBZIwGyXmV3sSiYs=
 
 signal-exit@^3.0.0, signal-exit@^3.0.2:
   version "3.0.2"

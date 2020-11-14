@@ -1,6 +1,6 @@
 # Deployment from scratch
 
-## Baseline Infrastructure / Kubernetes
+## Baseline Infrastructure
 
 If deploying in development, a working `minikube` is needed. On Windows:
 
@@ -10,6 +10,7 @@ If deploying in development, a working `minikube` is needed. On Windows:
 ```
 git config --global user.email "you@example.com"
 git config --global user.name "Your Name"
+git config --global credential.helper store
 ```
 - Install Golang: https://golang.org/doc/install
 - Install Node NVM inside Ubuntu: https://github.com/nvm-sh/nvm
@@ -27,10 +28,15 @@ service docker start
 ```
 - Install Minikube: https://minikube.sigs.k8s.io/docs/start/
 - Install Kubectl: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+
+## Kubernetes
+
 - Set up Minikube
 ```
 minikube config set driver docker
-minikube start
+minikube config set cpus 4
+minikube config set memory 16384
+minikube start --driver-mounts="/home/wcj/dev/mesh/gitops:/gitops:rwZ"
 ```
 - Configure addons:
 ```
@@ -183,6 +189,17 @@ resources/port-forward.sh
   - `default/jaeger-elasticsearch-secret` must contain:
     - `ES_USERNAME`: `logging`
     - `ES_PASSWORD`: the password you created above
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jaeger-elasticsearch-secret
+  namespace: default
+type: Opaque
+stringData:
+  ES_USERNAME: logging
+  ES_PASSWORD: xxx
+```
 
 - Deploy Jaeger
 ```

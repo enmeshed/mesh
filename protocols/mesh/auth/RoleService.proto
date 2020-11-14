@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+
+import "mesh/auth/Ability.proto";
+import "mesh/GenericQuery.proto";
+import "mesh/GenericResultSet.proto";
+
+service RoleService {
+  // Get role information
+  rpc getRole(GetRoleRequest) returns (GetRoleResponse);
+  // Create role
+  rpc createRole(CreateRoleRequest) returns (CreateRoleResponse);
+  // Delete role
+  rpc deleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  // Get abilities for a role or roles
+  rpc getRoleAbilities(GetRoleAbilitiesRequest) returns (GetRoleAbilitiesResponse);
+  // Set abilities for a role
+  rpc setRoleAbilities(SetRoleAbilitiesRequest) returns (SetRoleAbilitiesResponse);
+  // Get roles for a user, along with all abilities for those roles
+  rpc getUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
+  // Set roles for a user
+  rpc setUserRoles(SetUserRolesRequest) returns (SetUserRolesResponse);
+}
+
+message GetRoleRequest {
+  // oneof operation
+  // Get role information for specific role IDs
+  repeated string ids = 1;
+  // Run query against role database
+  GenericQuery query = 2;
+}
+
+message GetRoleResponse {
+  GenericResultSet results = 1;
+}
+
+message CreateRoleRequest {
+  // Role ID. If provided, role will only be created if corresponding
+  // ID does not already exist.
+  string id = 1;
+  // Role name
+  string name = 2;
+  // Initial collection of abilities to be assigned to the role
+  repeated Ability abilities = 2;
+}
+
+message CreateRoleResponse {
+  // True if role was created
+  bool created = 1;
+  // ID of created role
+  string id = 2;
+}
+
+message DeleteRoleRequest {
+  // ID of role to be deleted
+  string id = 1;
+}
+
+message DeleteRoleResponse {
+  // Was the role found and deleted?
+  bool deleted = 1;
+}
+
+message GetRoleAbilitiesRequest {
+  // Role IDs to query; returns the union of the abilities of all the listed
+  // roles
+  repeated string ids = 1;
+}
+
+message GetRoleAbilitiesResponse {
+  repeated Ability abilities = 1;
+}
+
+message SetRoleAbilitiesRequest {
+  // oneof subject
+  string id = 1;
+
+  // oneof action
+  repeated string removeAbilityIds = 3;
+  repeated Ability addAbilities = 4;
+  repeated Ability setAbilities = 5;
+}
+
+message SetRoleAbilitiesResponse {}
+
+message GetUserRolesRequest {
+  string userId = 1;
+}
+
+message GetUserRolesResponse {
+  repeated string roleIds = 1;
+  repeated mesh.auth.Ability abilities = 2;
+}
+
+message SetUserRolesRequest {
+  // User to modify
+  string userId = 1;
+
+  ///// oneof action
+  // Role IDs to add
+  repeated string addRoleIds = 2;
+  // Role IDs to remove
+  repeated string removeRoleIds = 3;
+  // Set list of role IDs to exact list
+  repeated string setRoleIds = 4;
+}
+
+message SetUserRolesResponse {}

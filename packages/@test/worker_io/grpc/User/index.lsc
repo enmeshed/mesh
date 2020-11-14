@@ -1,11 +1,43 @@
 import { errors } from '@enmeshed/errors'
-import { Protocols, withResources, fieldChecks } from '@enmeshed/meshnode'
+import { Protocols, withResources, fieldChecks, atStartup } from '@enmeshed/meshnode'
 import { makeCredential, checkCredential, issueSessionJWT, verifySessionJWT } from '@mesh/credential'
 import { toPlainObject } from '@ormojo/ephraim'
 
 { check, checkObject, checkString, checkEmail } = fieldChecks
 
 Protocols.require('mesh/auth/UserAuthService.proto')
+
+atStartup(
+  withResources(
+    {
+      Tasker: "grpc.client.protocol:mesh.task.TaskManagementService"
+    }
+    createSessionReaperTask({Tasker}) -/> {
+      log.info('Creating session reaper task')
+      <- Tasker.createTask({
+        taskId: 'user.auth.sessionReaper'
+        description: "Check sessions for last activity notification and flag as inactive if too old."
+        schedule: {
+          repeat: {
+            every: 60000
+            reentrant: {
+              allow_reentrancy: false
+            }
+          }
+        }
+        runnable: {
+          grpc: {
+            target: {
+              service: 'mesh.auth.UserAuthService'
+              method: 'reapSessions'
+            }
+          }
+        }
+      })
+    }
+  )
+)
+
 
 newUser = withResources(
   {
@@ -59,7 +91,7 @@ newUser = withResources(
 
     // Create associated credential
     cred <- makeCredential('email_and_password', { email, plaintextSecret: password })
-    cred.UserId = user.id
+    cred.userId = user.id
     <- Credential.create(cred)
 
     // Fire system event
@@ -81,8 +113,11 @@ newUser = withResources(
 getUser = withResources(
   {
     User: "model:User"
+    UserRole: "model:UserRole"
+    UserAbility: "model:UserAbility"
   }
-  getUser({ User }, req) -/> {
+  getUser({ User, UserRole, UserAbility }, req) -/> {
+    // Decode query
     ids = if req.ids:
       req.ids
     elif req.id:
@@ -92,15 +127,43 @@ getUser = withResources(
 
     if ids.length == 0: return { users: {} }
 
-    q = User.createQuery()
+    // Locate matching users
+    let q = User.createQuery()
     q.where(q.In('id', ids))
     res <- User.find(q)
+    resultArray = res.getResults()
 
-    idMap = {...for elem user in res.getResults():
-      { [user.id]: { id: user.id, payload: toPlainObject(user) } }
+    // Make map id->user
+    foundIds = [...for elem result in resultArray: [result.id]]
+    idMap = {...for elem user in resultArray:
+      { [user.id]: {
+        id: user.id
+        payload: toPlainObject(user)
+        roleIds: []
+        userAbilities: []
+      } }
     }
 
-    { users: idMap }
+    // Get roles and abilities for matching users
+    rq = UserRole.createQuery()
+    rq.where(rq.In('userId', foundIds))
+    uaq = UserAbility.createQuery()
+    uaq.where(uaq.In('userId', foundIds))
+    [roleSet, abilitySet] <- [UserRole.find(rq), UserAbility.find(uaq)]
+
+    for elem role in roleSet.getResults():
+      idMap[role.userId].roleIds.push(role.roleId)
+
+    for elem ability in abilitySet.getResults():
+      idMap[ability.userId].userAbilities.push(ability.toAbilityProtobuf())
+
+    response = if ids.length == 1:
+      { user: if foundIds[0]: idMap[foundIds[0]], foundIds }
+    else:
+      { users: idMap, foundIds }
+
+    log.trace("getUser response", response)
+    response
   }
 )
 
@@ -201,7 +264,7 @@ beginSession = withResources(
     securityInfo <- UserAuthService.getUserSecurity({userId: cred.userId})
     cachedSecurity = {
       roleIds: securityInfo.roleIds
-      abilities: securityInfo.userAbilities.concat(securityInfo.roleAbilities)
+      abilities: (securityInfo.userAbilities or []).concat(securityInfo.roleAbilities or [])
     }
 
     // Create new session
@@ -324,7 +387,8 @@ setUserRoles = withResources(
   }
   setUserRoles({ svc, UserRole }, req) -/> {
     // Get current user roles
-    user <- svc.getUser({ id: req.userId })
+    { user } <- svc.getUser({ id: req.userId })
+    if not user: throw new errors.NotFoundError('user', req.userId)
     { roleIds: currentRoleIds } = user
 
     let addRoleIds = req.addRoleIds or []
@@ -360,7 +424,7 @@ setUserRoles = withResources(
       [UserRole.create({ userId: user.id, roleId: addedRoleId })]
     ]
 
-    <- Promise.all(deletePromise, ...insertPromises)
+    <- Promise.all([deletePromise, ...insertPromises])
 
     {}
   }
@@ -401,36 +465,28 @@ setAbilities = withResources(
 
 getUserSecurity = withResources(
   {
-    "UserRole": "model:UserRole"
-    "UserAbility": "model:UserAbility"
+    "UserAuthService": "grpc.client.protocol:mesh.auth.UserAuthService"
     "RoleAbility": "model:RoleAbility"
   }
-  getUserSecurity({UserRole, UserAbility, RoleAbility}, req) -/> {
-    // Get roleIDs held by the user
-    let q = UserRole.createQuery()
-    q.where(q.Eq('id', req.userId))
-    let rset <- UserRole.find(q)
-    roles = rset.getResults()
-    roleIds = [...for elem role in roles: [role.id]]
+  getUserSecurity({UserAuthService, RoleAbility}, req) -/> {
+    { user } <- UserAuthService.getUser({ id: req.userId })
+    if not user:
+      throw new errors.NotFoundError("user", req.userId)
+    log.trace("getUserSecurity found user", user)
+    { roleIds, userAbilities } = user
 
     // Get corresponding role abilities
-    now q = RoleAbility.createQuery()
+    q = RoleAbility.createQuery()
     q.where(q.In('roleId', roleIds))
-    now rset <- RoleAbility.find(q)
+    rset <- RoleAbility.find(q)
     roleAbilities = [...for elem result in rset.getResults():
       [result.toAbilityProtobuf()]
     ]
 
-    // Get corresponding user abilities
-    now q = UserAbility.createQuery()
-    q.where(q.Eq('userId', req.userId))
-    now rset <- UserAbility.find(q)
-    userAbilities = [...for elem result in rset.getResults():
-      [result.toAbilityProtobuf()]
-    ]
-
     // Compose response
-    { roleIds, userAbilities, roleAbilities }
+    res = { roleIds, userAbilities, roleAbilities }
+    log.trace("getUserSecurity", req.userId, "has", res)
+    res
   }
 )
 

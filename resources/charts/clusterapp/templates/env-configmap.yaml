@@ -6,5 +6,7 @@ metadata:
     {{- include "clusterapp.labels" . | nindent 4 }}
 data:
   MESH_ENVIRONMENT: {{ .Values.environment }}
+  {{- if .Values.provider }}
   MESH_PROVIDER: {{ .Values.provider }}
+  {{- end }}
   MESH_CONTROL_PLANE_ADDRESS: {{ .Values.controlPlaneAddress }}

@@ -1,0 +1,31 @@
+import { withResources } from '@enmeshed/meshnode'
+import { errors } from '@enmeshed/errors'
+import { toPlainObject } from '@ormojo/ephraim'
+
+getTaskLog = withResources(
+  {
+    Task: "model:TaskSchedule"
+    TaskLog: "model:TaskExecutionLog"
+  }
+  getTaskLog({ Task, TaskLog }, { taskId, checkRunning }) -/> {
+    if not checkRunning:
+      throw new errors.NotImplementedError('only checkRunning queries are currently implemented')
+
+    // Find a RUN entry for this task
+    q = TaskLog.createQuery()
+    q.where(q.And(
+      q.Eq('taskId', taskId)
+      q.Eq('logType', 'RUN')
+    ))
+    res <- TaskLog.find(q)
+
+    if res.isEmpty():
+      {}
+    else:
+      {
+        runEntry: { fields: toPlainObject(res.getResults()[0]) }
+      }
+  } // getTaskLog
+)
+
+export { getTaskLog }

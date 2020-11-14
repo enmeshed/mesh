@@ -1,0 +1,97 @@
+// Tasker job completion watcher.
+import { Container, Provider } from '@enmeshed/alpha'
+import { errors, CommonError } from '@enmeshed/errors'
+import { Job } from '@enmeshed/meshnode'
+
+// Process and execute tasker jobs
+class TaskerRunner extends Provider {
+  static providerName = "tasker.runner"
+  static dependencies = {
+    Task: "model:TaskSchedule"
+    TaskLog: "model:TaskExecutionLog"
+    Jobs: "jobs"
+    Events: "events"
+  }
+
+  init(): void -/> {
+    Container.retain(this)
+    { Jobs } = this
+    Jobs.processRaw("tasker.job", 5, this.jobHandler, Job)
+  } // init()
+
+  destroy(): void -/> {
+  }
+
+
+  jobHandler(job): void =/> {
+    { TaskLog, Task } = this
+    { grpcEndpoint, callback, args, '@@tasker': taskerData } = job.getData()
+    { taskId, runId } = taskerData
+    taskEntity <- Task.findById(taskId)
+    if not taskEntity:
+      throw new errors.NotFoundError("task", taskId)
+
+    try:
+      <- this.runGrpc(grpcEndpoint, args)
+
+      try:
+        <- TaskLog.create({taskId, runId, logType: 'RUN_SUCCEEDED'})
+
+      try:
+        if taskEntity.state == 'RUNNING':
+          if taskEntity.nextCheck:
+            taskEntity.setState('WAITING')
+          else:
+            taskEntity.setState('DONE')
+          <- taskEntity.save()
+      catch err:
+        log.error({err}, "Error while resetting job state")
+        // XXX: system notification here, this can cause stuck jobs
+
+      // Run callback if needed
+      if not callback?.runnable: return
+      try:
+        <- this.runRunnable(callback.runnable, err)
+      catch err:
+        log.error({err}, "Error running job callback")
+
+    catch err:
+      log.error({err}, "Error running gRPC job", { grpcEndpoint, args })
+      errJson = CommonError.toJSON(err)
+      <- TaskLog.create({taskId, runId, logType: 'RUN_FAILED', payload: { err: errJson }})
+  } // jobHandler
+
+  runRunnable(runnable, errJson) -/> {
+    match runnable:
+      | ~looseEq(null):
+        return { noop: true }
+      | .event as { event: { eventName }, args }:
+        log.trace('runRunnable: firing event', eventName)
+        nextArgs = if errJson: Object.assign({}, args, { err: errJson} ) else: args
+        this.Events.fire(eventName, nextArgs)
+        return { fireAndForget: true }
+      | .grpc as { grpc: { target }, args }:
+        log.trace('runRunnable: calling grpc', { target })
+        nextArgs = if errJson: Object.assign({}, args, { err: errJson} ) else: args
+        this.runGrpc(target, nextArgs)
+      | else:
+        log.trace('runRunnable: unsupported runnable type')
+        return { noop: true }
+  } // runRunnable()
+
+  runGrpc(target, args) -/> {
+    pr = if target.meshService:
+      Container.get(`grpc.client.port:${target.meshService}:${target.service}`)
+    else:
+      Container.get(`grpc.client.protocol:${target.service}`)
+    client <- pr
+
+    method = client[target.method]
+    if not method:
+      throw new errors.NotFoundError("method", target.method)
+
+    method.call(client, args)
+  } // runGrpc()
+} // class TaskerRunLoop
+
+Container.provide(TaskerRunner)

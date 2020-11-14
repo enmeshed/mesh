@@ -1,0 +1,95 @@
+// Tasker job completion watcher.
+import { Container, Provider } from '@enmeshed/alpha'
+import { errors } from '@enmeshed/errors'
+
+// Watch Kafka for job queue completion events. If those jobs were invoked
+// by Tasker, notify Tasker that the jobs are complete.
+class TaskerCompletionWatcher extends Provider {
+  static providerName = "tasker.completionWatcher"
+  static dependencies = {
+    Task: "model:TaskSchedule"
+    TaskLog: "model:TaskExecutionLog"
+    DistributedLockService: "grpc.client.protocol:mesh.dtx.DistributedLockService"
+    Events: "events"
+  }
+
+  init(): void -/> {
+    Container.retain(this)
+    { Events } = this
+    Events.listen('system.job.completed', this.onJobCompleted)
+    Events.listen('system.job.failed', this.onJobFailed)
+  } // init()
+
+  destroy(): void -/> {
+  }
+
+  onJobCompleted({ data }): void =/> {
+    taskerData = data?['@@tasker']
+    if not taskerData: return
+    this.jobCompleted(taskerData, null)
+  }
+
+  onJobFailed({ data }): void =/> {
+    taskerData = data?['@@tasker']
+    if not taskerData: return
+    this.jobCompleted(taskerData, new Error("XXX"))
+  }
+
+  jobCompleted(taskerData, err): void -/> {
+    { TaskLog, Task } = this
+    { callback, taskId, runId } = taskerData
+
+    // Mark Task as finished
+    taskEntity <- Task.findById(taskId)
+    if taskEntity.state == 'RUNNING':
+      if taskEntity.nextCheck:
+        taskEntity.setState('WAITING')
+      else:
+        taskEntity.setState('DONE')
+      <- taskEntity.save()
+
+    // Add entry to tasklog
+    <- TaskLog.create({taskId, runId, logType: if err: 'RUN_FAILED' else: 'RUN_SUCCEEDED'})
+
+    // Run callback if needed
+    if not callback?.runnable: return
+    try:
+      <- this.runRunnable(callback.runnable, err)
+    catch err:
+      log.error({err}, "Error running job callback")
+  } // jobCompleted
+
+  runRunnable(runnable, errJson) -/> {
+    match runnable:
+      | ~looseEq(null):
+        return { noop: true }
+      | .event as { event: { eventName }, args }:
+        log.trace('runRunnable: firing event', eventName)
+        nextArgs = if errJson: Object.assign({}, args, { err: errJson} ) else: args
+        this.Events.fire(eventName, nextArgs)
+        return { fireAndForget: true }
+      | .grpc as { grpc: { target }, args }:
+        log.trace('runRunnable: calling grpc', { target })
+        nextArgs = if errJson: Object.assign({}, args, { err: errJson} ) else: args
+        this.runGrpc(target, nextArgs)
+      | else:
+        log.trace('runRunnable: unsupported runnable type')
+        return { noop: true }
+  } // runRunnable()
+
+  runGrpc(target, args) -/> {
+    pr = if target.meshService:
+      Container.get(`grpc.client.port:${target.meshService}:${target.service}`)
+    else:
+      Container.get(`grpc.client.protocol:${target.service}`)
+    client <- pr
+
+    method = client[target.method]
+    if not method:
+      throw new errors.NotFoundError("method", target.method)
+
+    method.call(client, args)
+  } // runGrpc()
+} // class TaskerRunLoop
+
+Container.provide(TaskerCompletionWatcher)

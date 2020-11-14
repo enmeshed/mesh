@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package mesh.dtx;
+
+import "google/protobuf/duration.proto";
+import "mesh/dtx/DistributedLock.proto";
+import "mesh/dtx/LockedObject.proto";
+
+service DistributedLockService {
+  // Try to acquire a distributed lock.
+  rpc acquireLock(AcquireLockRequest) returns (AcquireLockResponse);
+
+  // Release an acquired lock
+  rpc releaseLock(AcquireLockResponse) returns (ReleaseLockResponse);
+}
+
+message AcquireLockRequest {
+  // Object to lock
+  LockedObject object = 1;
+  // Desired lock timeout, seconds. If not released by
+  int32 lockTimeoutSeconds = 2;
+  // Desired retry timeout, seconds. If zero, the implementation
+  // will only attempt to acquire the lock once.
+  int32 retryTimeoutSeconds = 3;
+}
+
+message AcquireLockResponse {
+  DistributedLock lock = 1;
+}
+
+message ReleaseLockResponse {
+}

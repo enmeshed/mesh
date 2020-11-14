@@ -2,9 +2,24 @@ syntax = "proto3";
 
 package mesh;
 
-import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 message PaginationToken {
+  // String identifying the token type to the system, implementation-defined
   string token_type = 1;
-  string token_payload = 2;
+
+  // True if there are results remaining.
+  bool more = 2;
+
+  // These are for offset/limit normal form tokens
+  uint32 offset = 3;
+  uint32 page_size = 4;
+  uint32 total_results = 5;
+
+  // Generic additional token payload, implementation-defined
+  google.protobuf.Struct payload = 6;
+
+  // Client may set this to request a particular page number from the set.
+  // It's up to the implementation whether to accept this.
+  uint32 requested_page_number = 7;
 }

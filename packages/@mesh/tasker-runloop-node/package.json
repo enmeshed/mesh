@@ -1,0 +1,8 @@
+{
+  "name": "@mesh/tasker-runloop-node",
+  "description": "Single worker process for a runloop node.",
+  "version": "0.1.0",
+  "dependencies": {
+    "@enmeshed/meshnode": "^0.1.0"
+  }
+}

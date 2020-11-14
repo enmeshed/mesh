@@ -1,0 +1,8 @@
+{
+  "name": "@mesh/dls-redis",
+  "version": "0.1.0",
+  "description": "An implementation of DistributedLockService backed by Redis.",
+  "dependencies": {
+    "@enmeshed/meshnode": "^0.1.0"
+  }
+}

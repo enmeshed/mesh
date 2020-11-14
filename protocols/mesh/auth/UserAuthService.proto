@@ -52,7 +52,11 @@ message GetUserRequest {
 }
 
 message GetUserResponse {
-  map<string, mesh.auth.User> users = 1;
+  map<string, User> users = 1;
+  // Result for single user queries
+  User user = 2;
+  // Ids of found users
+  repeated string foundIds = 3;
 }
 
 message DeleteUserRequest {

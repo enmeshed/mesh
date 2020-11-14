@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package mesh.task;
+
+import "mesh/task/Runnable.proto";
+import "google/protobuf/Struct.proto";
+
+// Describe a callback to occur once a task is finished
+message Callback {
+  Runnable runnable = 1;
+}

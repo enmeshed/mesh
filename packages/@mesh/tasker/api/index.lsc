@@ -1,0 +1,32 @@
+import { createTask } from './createTask'
+import { getTask } from './getTask'
+import { getTaskLog } from './getTaskLog'
+import { deleteTask } from './deleteTask'
+import { withResources } from '@enmeshed/meshnode'
+
+// Verify that models and services are available before returning
+// a healthy result
+healthCheck = withResources(
+  {
+    Task: "model:TaskSchedule"
+    TaskLog: "model:TaskExecutionLog"
+    DistributedLockService: "grpc.client.protocol:mesh.dtx.DistributedLockService"
+  }
+  healthCheck(deps, req) -/> {
+    {
+      healthy: true
+    }
+  } // healthCheck
+)
+
+export default {
+  bindings: {
+    "mesh.task.TaskManagementService": {
+      healthCheck
+      createTask
+      getTask
+      getTaskLog
+      deleteTask
+    }
+  }
+}

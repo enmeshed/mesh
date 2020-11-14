@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package mesh.task;
+
+// Describe how a task may be scheduled
+message Schedule {
+  message Once {
+    oneof when {
+      // Run at the specified time (JS timestamp)
+      double at = 1;
+      // Run after the specified delay in MS
+      double in = 2;
+    }
+  }
+
+  message Repeat {
+    message Reentrant {
+      // Allow this task to run again if it is already running
+      bool allow_reentrancy = 1;
+    }
+
+    // How often should the task be repeated
+    oneof when {
+      // Repeat every this-many MS
+      double every = 1;
+      // Repeat on this cron string
+      string cron = 2;
+    }
+
+    oneof start {
+      // Wait this many MS before starting the task
+      double delay = 3;
+      // Don't start the task until this timestamp in MS
+      double startAt = 4;
+    }
+
+    oneof until {
+      // Stop executing the task at the given timestamp in MS. 0 = forever
+      double endAt = 5;
+      // Stop executing the task after the given number of repetitions
+      // 0 = forever
+      int32 repetitions = 6;
+    }
+
+    // Re-entrancy behavior
+    Reentrant reentrant = 7;
+  }
+
+  oneof frequency {
+    Once once = 1;
+    Repeat repeat = 2;
+  }
+}

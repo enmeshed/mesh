@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package mesh;
+
+message GrpcEndpoint {
+  // Fully qualified name of gRPC service definition
+  string service = 1;
+  // Method name
+  string method = 2;
+  // Mesh service identifier
+  string meshService = 3;
+}

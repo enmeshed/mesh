@@ -1,0 +1,24 @@
+import { withResources } from '@enmeshed/meshnode'
+import { errors } from '@enmeshed/errors'
+
+deleteTask = withResources(
+  {
+    Task: "model:TaskSchedule"
+    TaskManagementService: "grpc.client.protocol:mesh.task.TaskManagementService"
+  }
+  deleteTask({TaskManagementService, Task}, {taskId}) -/> {
+    // Verify task existence
+    { task } <- TaskManagementService.getTask({ taskId })
+    if not task:
+      throw new errors.NotFoundError('Task', taskId)
+
+    // Delete main task entry
+    q = Task.createQuery()
+    q.where(q.Eq('id', taskId))
+    <- Task.destroyByQuery(q)
+
+    {}
+  } // deleteTask
+)
+
+export { deleteTask }

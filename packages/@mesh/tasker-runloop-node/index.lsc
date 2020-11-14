@@ -1,12 +1,9 @@
-// http api server
-import { Container } from '@enmeshed/alpha'
-import { singletonProvider, Log, StdoutLogWriter, loadRoutesFromWebpackContext } from '@enmeshed/meshnode'
-import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
 import path from 'path'
+import { Container } from '@enmeshed/alpha'
+import { singletonProvider, Log, StdoutLogWriter } from '@enmeshed/meshnode'
+import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
 
-express = require('express')
-
-routeContext = require.context('./routes', true)
+import '@mesh/tasker'
 
 // Log to stdout
 Log.addWriter(new StdoutLogWriter())
@@ -15,15 +12,9 @@ Log.addWriter(new StdoutLogWriter())
 ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
 Container.provide(singletonProvider("node.reflectionDataSource", ds))
 
-bindings(router) -/>
-  router.use(express.json())
-  loadRoutesFromWebpackContext(routeContext, router)
-
 asyncMain() -/>
   healthCheck <- Container.get("http.healthcheck")
-  svcMgr <- Container.get("http.service.manager")
-  svcMgr.bind('api', bindings)
-  <- svcMgr.autoStart()
+  <- Container.get("tasker.runloop")
   healthCheck.setHealthy(true)
 
 asyncMain()

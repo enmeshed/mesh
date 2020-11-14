@@ -1,0 +1,7 @@
+{
+  "name": "@mesh/pb-util",
+  "version": "0.1.0",
+  "description": "Tools for working with the mesh standard protobuf suite.",
+  "dependencies": {
+  }
+}

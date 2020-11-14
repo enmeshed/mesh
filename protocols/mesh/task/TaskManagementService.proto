@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package mesh.task;
+
+import "google/protobuf/struct.proto";
+
+import "mesh/HealthCheckRequest.proto";
+import "mesh/HealthCheckResponse.proto";
+import "mesh/task/Schedule.proto";
+import "mesh/task/Runnable.proto";
+import "mesh/task/Callback.proto";
+import "mesh/GenericQuery.proto";
+import "mesh/GenericResultSet.proto";
+
+service TaskManagementService {
+  rpc healthCheck(mesh.HealthCheckRequest) returns (mesh.HealthCheckResponse);
+  // Create a new task
+  rpc createTask(CreateTaskRequest) returns (CreateTaskResponse);
+  // Get a list of existing tasks by query
+  rpc getTask(GetTaskRequest) returns (GetTaskResponse);
+  // Get the recent task log entries for a task.
+  rpc getTaskLog(GetTaskLogRequest) returns (GetTaskLogResponse);
+  rpc deleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+}
+
+message CreateTaskRequest {
+  // Optional task ID. If provided, and the task already exists, it
+  // will not be created.
+  string taskId = 1;
+
+  // Description of the schedule for the task
+  Schedule schedule = 2;
+
+  // Runnable to be scheduled
+  Runnable runnable = 3;
+
+  // Callback to be executed on runnable completion
+  Callback callback = 4;
+
+  // Human-readable description of task
+  string description = 5;
+}
+
+message CreateTaskResponse {
+  // False if the task was not created because the ID was a duplicate
+  bool created = 1;
+  // Id of the created task
+  string taskId = 2;
+}
+
+message GetTaskRequest {
+  GenericQuery query = 1;
+  string taskId = 2;
+}
+
+message GetTaskResponse {
+  GenericResultSet resultSet = 1;
+  // For requests asking for one task by id, return it directly with
+  // no wrapper.
+  google.protobuf.Struct task = 2;
+}
+
+message GetTaskLogRequest {
+  string taskId = 1;
+  // If true, checks only if the task is currently running. Populates
+  // `runEntry`
+  bool checkRunning = 2;
+  string runId = 3;
+  // If true, checks only if the task has been killed.
+  bool checkKilled = 4;
+}
+
+message GetTaskLogResponse {
+  message TaskLogEntry {
+    google.protobuf.Struct fields = 1;
+  }
+
+  // Log entries
+  repeated TaskLogEntry entries = 1;
+  // Run entry for checkRunning/checkKilled queries
+  TaskLogEntry runEntry = 2;
+}
+
+message DeleteTaskRequest {
+  string taskId = 1;
+}
+
+message DeleteTaskResponse {
+}

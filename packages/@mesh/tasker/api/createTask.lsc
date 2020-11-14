@@ -1,0 +1,79 @@
+import { withResources } from '@enmeshed/meshnode'
+import cuid from 'cuid'
+import { nextCheckTimeForSchedule, checkPresenceOfCallback } from '../util'
+
+isDeadTask(task) ->
+  match task.state:
+    | "DONE": true
+    | "DEAD": true
+    | else: false
+
+clearForCreation(Task, taskId) -/>
+  q = Task.createQuery()
+  q.where(q.Eq("id", taskId))
+  res <- Task.find(q)
+  if res.isEmpty(): return true
+  task = res.getResults()[0]
+  if isDeadTask(task):
+    <- Task.destroyByQuery(q)
+    return true
+  else:
+    return false
+
+createTask = withResources(
+  {
+    Task: "model:TaskSchedule"
+    DistributedLockService: "grpc.client.protocol:mesh.dtx.DistributedLockService"
+  }
+  createTask({ Task, DistributedLockService }, { taskId, schedule, runnable, callback, description }) -/> {
+    // If taskid provided, elide dupe creation
+    if taskId:
+      if not <- clearForCreation(Task, taskId):
+        return { created: false }
+
+    now taskId = taskId or `task_${cuid()}`
+
+    // Compute next check time
+    [t0, scheduleType] = nextCheckTimeForSchedule(schedule, true)
+
+    // Check if callback is necessary; nullify if not
+    now callback = checkPresenceOfCallback(callback)
+
+    // This isn't expected to fail, as this should be a totally new Task ID.
+    // We still take the lock to prevent the run loop from grabbing this task
+    // while we are setting up the internals.
+    // If it fails, just bail.
+    let lock = {}, createdTask
+    try:
+      now lock <- DistributedLockService.acquireLock({
+        object: {
+          type: 'task'
+          id: taskId
+        }
+        lockTimeoutSeconds: 5
+        retryTimeoutSeconds: 0
+      })
+
+      now createdTask <- Task.create({
+        description
+        nextCheck: new Date(t0)
+        lastStateChange: new Date()
+        state: "WAITING"
+        scheduleType
+        schedule: schedule.toJSON()
+        runnable: runnable.toJSON()
+        callback
+      })
+    finally:
+      // Release lock on task
+      <- DistributedLockService.releaseLock(lock)
+
+    // Result
+    {
+      created: true
+      taskId: createdTask.id
+    }
+  } // createTask
+)
+
+export { createTask }

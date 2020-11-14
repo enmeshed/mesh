@@ -1,0 +1,49 @@
+import { toPlainObject } from '@ormojo/ephraim'
+import { errors } from '@enmeshed/errors'
+import { withResources } from '@enmeshed/meshnode'
+
+getOneTask(Task, id) -/>
+  q = Task.createQuery()
+  q.where(q.Eq('id', id))
+  res <- Task.find(q)
+  found = res.getResults()?[0]
+  { task: if found: toPlainObject(found) }
+
+getManyTasks(Task, ids) -/>
+  q = Task.createQuery()
+  q.where(q.In('id', ids))
+  res <- Task.find(q)
+  results = [...for elem r in (res.getResults() or []):
+    [toPlainObject(r)]
+  ]
+  { resultSet: toSimpleResults(results) }
+
+getTasksByQuery(Task, args, order, paginationToken) -/>
+  q = Task.createQuery()
+  // TODO: parse args
+  q.whereClause = '1'
+  { offset, limit, total } = paginationTokenToLimits(paginationToken)
+  q.setLimits(offset, limit, total)
+  res <- Task.find(q)
+  results = [...for elem r in (res.getResults() or []):
+    [toPlainObject(r)]
+  ]
+  { resultSet: toPagedResults(results, { offset, limit, total }, res.cursor) }
+
+getTask = withResources(
+  {
+    Task: "model:TaskSchedule"
+  }
+  getTask({ Task }, { query, taskId }) -/> {
+    if taskId:
+      return getOneTask(Task, taskId)
+    else if query?.args?.ids:
+      return getManyTasks(Task, query.args.ids)
+    else if query?.args:
+      return getTasksByQuery(Task, query.args, query.order, query.paginationToken)
+    else:
+      throw new errors.InvalidArgumentError('query', 'bad or missing query argument')
+  } // getTask
+)
+
+export { getTask }

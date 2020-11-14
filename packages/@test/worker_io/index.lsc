@@ -7,6 +7,7 @@ import { FileDataSource } from '@enmeshed/mesh-reflection-file-watcher'
 import { bindings } from '@mesh/backend_models'
 
 // GRPC
+import DistributedLockService from '@mesh/dls-redis'
 import EnvoyAuth from './grpc/EnvoyAuth'
 import Test from './grpc/Test'
 import DataManagementService from './grpc/DataManagementService'
@@ -18,6 +19,9 @@ import TestEvents from './events/Test'
 // Jobs
 import TestJobs from './jobs/Test'
 
+// Tasker services
+import '@mesh/tasker'
+
 // Log to stdout
 Log.addWriter(new StdoutLogWriter())
 
@@ -26,12 +30,15 @@ ds = new FileDataSource(path.resolve(process.argv[2], 'config', 'cluster.json'))
 Container.provide(singletonProvider("node.reflectionDataSource", ds))
 
 asyncMain() -/>
+  healthCheck <- Container.get("http.healthcheck")
+
   //////////// Data Models
   dataMgr <- Container.get("model.manager")
   dataMgr.bindAll(bindings)
 
   //////////// GRPC services
   svcMgr <- Container.get("grpc.service.manager")
+  svcMgr.bind('distributed_lock', DistributedLockService.bindings)
   svcMgr.bind('envoy_auth', EnvoyAuth.bindings)
   svcMgr.bind('goodbye', Test.bindings)
   svcMgr.bind('data_management', DataManagementService.bindings)
@@ -47,6 +54,12 @@ asyncMain() -/>
   ///////////// Job Processors
   jobs <- Container.get('jobs')
   jobs.processAll(TestJobs.bindings)
+
+  ///////////// Tasker
+  <- Container.get('tasker.runner')
+  <- Container.get('tasker.completionWatcher')
+
+  healthCheck.setHealthy(true)
 
 asyncMain()
   .catch! (err) ->

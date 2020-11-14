@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package mesh;
+
+import "mesh/Pagination.proto";
+
+message GenericResultSet {
+  // Number of results returned
+  uint32 result_count = 1;
+
+  // Results
+  repeated google.protobuf.Struct results = 2;
+
+  // Pagination information
+  Pagination pagination = 3;
+}

@@ -4,10 +4,15 @@ syntax = "proto3";
 package mesh.auth;
 
 import "google/protobuf/struct.proto";
+import "mesh/auth/Ability.proto";
 
 message User {
   // User id
   string id = 1;
   // Generic payload
   google.protobuf.Struct payload = 2;
+  // User role ids
+  repeated string roleIds = 3;
+  // User abilities
+  repeated Ability userAbilities = 4;
 }

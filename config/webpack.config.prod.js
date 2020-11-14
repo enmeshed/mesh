@@ -22,6 +22,7 @@ const externalModules = {
   "@enmeshed/grpc": true,
   "@enmeshed/node-control-plane": true,
   "@enmeshed/protobuf": true,
+  "@enmeshed/jaeger-client": true,
   "@elastic/elasticsearch": true,
   "kafkajs": true,
   "mysql2": true,
@@ -39,7 +40,8 @@ module.exports = {
   entry: {
     'bowser': path.resolve(paths.src, '@enmeshed/bowser/src/main.lsc'),
     'api': path.resolve(paths.src, '@test/api/index.lsc'),
-    'worker_io': path.resolve(paths.src, '@test/worker_io/index.lsc')
+    'worker_io': path.resolve(paths.src, '@test/worker_io/index.lsc'),
+    'tasker-runloop': path.resolve(paths.src, '@mesh/tasker-runloop-node/index.lsc')
   },
   devtool: 'source-map',
   output: {
@@ -122,7 +124,8 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'IS_BUILDING_WITH_WEBPACK': JSON.stringify(true)
+      'IS_BUILDING_WITH_WEBPACK': JSON.stringify(true),
+      'IS_BUILDING_FOR_PRODUCTION': JSON.stringify(false)
     })
     // Don't let Kue bundle its http server, we don't want it
     // new webpack.NormalModuleReplacementPlugin(

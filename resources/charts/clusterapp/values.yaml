@@ -3,7 +3,6 @@
 # Declare variables to be passed into your templates.
 
 environment: live
-provider: goodbye
 # Bowser control plane
 controlPlaneAddress: bowser.default.svc.cluster.local
 replicaCount: 1

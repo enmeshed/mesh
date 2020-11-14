@@ -19,6 +19,10 @@
       "type": "grpc_mesh",
       "protocols": ["test.Test"]
     },
+    "distributed_lock": {
+      "type": "grpc_mesh",
+      "protocols": ["mesh.dtx.DistributedLockService"]
+    },
     "envoy_auth": {
       "type": "grpc_direct",
       "protocols": [
@@ -85,7 +89,8 @@
         "redis": {},
         "mysql": {},
         "elasticsearch": {},
-        "data_management": {}
+        "data_management": {},
+        "distributed_lock": {}
       },
       "provider": {
         "api": {},
@@ -101,6 +106,7 @@
         "goodbye": "worker-io",
         "data_management": "worker-io",
         "userauth": "worker-io",
+        "distributed_lock": "worker-io",
         "kafka": "kafka_development",
         "mysql": "mysql_development",
         "redis": "redis_development",

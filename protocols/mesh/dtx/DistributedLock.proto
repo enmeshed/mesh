@@ -11,9 +11,9 @@ message DistributedLock {
   // Lock ID
   string id = 1;
   // Locked object identifier
-  mesh.dtx.LockedObject lockedObject = 2;
+  LockedObject lockedObject = 2;
   // Lock sequence number
-  mesh.dtx.LockSequence lockSequence = 3;
-  // Point in time when lock will timeout
-  google.protobuf.Timestamp timeout = 4;
+  LockSequence lockSequence = 3;
+  // Point in time when lock will timeout (JS timestamp)
+  double expires = 4;
 }
