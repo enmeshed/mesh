@@ -16,16 +16,9 @@ git config --global credential.helper store
 - Install Node NVM inside Ubuntu: https://github.com/nvm-sh/nvm
 - Install Node: `nvm install vX.X.X`
 - Install Yarn: https://classic.yarnpkg.com/en/docs/install/#debian-stable
-- Install Docker inside Ubuntu: https://docs.docker.com/engine/install/ubuntu/
+- Install Docker Desktop for Windows
+- Integrate Docker Desktop with Ubuntu WSL installation in Docker Desktop settings
 - Install Helm: `https://helm.sh/docs/intro/install/`
-- Start Docker (save this to a script, you will need to run it on restarts):
-```
-#!/bin/bash
-
-mkdir /sys/fs/cgroup/systemd
-mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
-service docker start
-```
 - Install Minikube: https://minikube.sigs.k8s.io/docs/start/
 - Install Kubectl: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
@@ -36,7 +29,7 @@ service docker start
 minikube config set driver docker
 minikube config set cpus 4
 minikube config set memory 16384
-minikube start --driver-mounts="/home/wcj/dev/mesh/gitops:/gitops:rwZ"
+minikube start --mount --mount-string="/home/wcj/dev/mesh/gitops:/gitops"
 ```
 - Configure addons:
 ```
@@ -111,7 +104,7 @@ kubectl port-forward --namespace default svc/phpmyadmin 8080:80
 ```
 - Create mysql user `app`
 ```
-CREATE USER 'app'@'%' IDENTIFIED WITH mysql_native_password AS '***';GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FILE, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES, LOCK TABLES, REPLICATION CLIENT, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON *.* TO 'app'@'%' REQUIRE NONE WITH MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
+CREATE USER 'app'@'%' IDENTIFIED WITH mysql_native_password AS 'App123$';GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FILE, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES, LOCK TABLES, REPLICATION CLIENT, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON *.* TO 'app'@'%' REQUIRE NONE WITH MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
 ```
 - Create mysql databases `app` and `app_development`
 
@@ -125,7 +118,7 @@ kubectl apply -f resources/dev/kibana-internal.yaml
 ```
 kubectl port-forward svc/kibana-internal-kb-http 5601:5601
 ```
-- Create ES users `app` and `logging` with corresponding roles
+- Create ES users `app` (`App123$`) and `logging` (`Log123$`) with corresponding roles
 - Remove temporary kibana instance
 ```
 kubectl delete -f resources/dev/kibana-internal.yaml
@@ -139,11 +132,6 @@ cd gitops
 npm install
 cd ..
 yarn run build
-```
-
-- Give the container access to the gitops folder
-```
-minikube mount gitops:/gitops
 ```
 
 ## Core internal services
@@ -161,9 +149,9 @@ metadata:
   namespace: development
 type: Opaque
 stringData:
-  MYSQL_PASSWORD: xxx
-  ELASTICSEARCH_PASSWORD: xxx
-  JWT_SIGNING_SECRET: xxx
+  MYSQL_PASSWORD: App123$
+  ELASTICSEARCH_PASSWORD: App123$
+  JWT_SIGNING_SECRET: 6351665468576D5A
 ```
 
 - Deploy IO worker
@@ -223,31 +211,3 @@ helm install api resources/charts/clusterapp -f resources/dev/helm/api.yaml --na
 
 - Connect via proxy: `kubectl proxy --accept-hosts='.*'`
 - Connect via ingress: `resources/port-forward.sh`
-
-## Misc
-
-### NFS provisioner
-
-Alternative to minikube hostpath-provisioner.
-
-Install NFS in Minikube:
-```
-minikube ssh
-sudo apt update && sudo apt install -y nfs-common
-```
-
-Disable broken provisioner:
-```
-minikube addons disable default-storageclass
-minikube addons disable storage-provisioner
-```
-
-Apply provisioner resources:
-```
-kubectl apply -f resources/dev/nfs-provisioner.yaml
-```
-
-Make it the default:
-https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/
-
-Add `storageclass.kubernetes.io/is-default-class: "true"` to annotations

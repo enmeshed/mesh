@@ -1,9 +1,10 @@
-apiVersion: kubedb.com/v1alpha1
+apiVersion: kubedb.com/v1alpha2
 kind: MySQL
 metadata:
   name: mysql
 spec:
-  version: "5.7-v2"
+  version: "5.7.31"
+  terminationPolicy: "WipeOut"
   storageType: "Durable"
   storage:
     accessModes:
@@ -18,5 +19,8 @@ spec:
       - --default-time-zone=+00:00
       resources:
         requests:
-          memory: "64Mi"
+          memory: "128Mi"
           cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"

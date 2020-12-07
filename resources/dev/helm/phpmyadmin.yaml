@@ -1,3 +1,6 @@
 # chart: bitnami/phpmyadmin
 db:
   host: 'mysql.default.svc'
+extraEnvVars:
+  - name: PMA_ABSOLUTE_URI
+    value: 'http://local.simplibuzz.com:3000/phpmyadmin'
