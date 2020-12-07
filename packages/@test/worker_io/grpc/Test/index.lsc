@@ -21,10 +21,14 @@ unary = withResources(
   } // unary
 )
 
+fail(req) -/>
+  throw new Error(req.message)
+
 export default {
   bindings: {
     "test.Test": {
       unary
+      fail
     }
   }
 }

@@ -1,15 +1,21 @@
 import { Protocols, withResources, fieldChecks, atStartup } from '@enmeshed/meshnode'
 import { errors } from '@enmeshed/errors'
+import { Entity, toPlainObject } from '@ormojo/ephraim'
+
+findRoles(Role, ids) -/>
+  if not Array.isArray(ids): return null
+  q = Role.createQuery()
+  q.where(q.In('id', ids))
+  res <- Role.find(q)
+  if res.isEmpty():
+    return []
+  else:
+    return res.getResults()
 
 findRole(Role, id) -/>
   if typeof(id) != 'string': return null
-  q = Role.createQuery()
-  q.where(q.Eq('id', id))
-  res <- Role.find(q)
-  if res.isEmpty():
-    return null
-  else:
-    return (res.getResults())?[0]
+  res <- findRoles(Role, [id])
+  res?[0] or null
 
 findRoleAbilities(RoleAbility, ids) -/>
   if (not ids) or (ids.length == 0): return []
@@ -20,12 +26,33 @@ findRoleAbilities(RoleAbility, ids) -/>
     [result.toAbilityProtobuf()]
   ]
 
+jsonify(obj) ->
+  if obj instanceof Entity:
+    toPlainObject(obj)
+  elif obj.toJSON:
+    obj.toJSON()
+  else:
+    obj
+
+wrapResult(models) ->
+  if (not models) or (models.length == 0):
+    {
+      result_count: 0
+      results: []
+    }
+  else:
+    {
+      result_count: models.length
+      results: [...for elem m in models: [jsonify(m)]]
+    }
+
 getRole = withResources(
   {
     "Role": "model:Role"
   }
   getRole({Role}, {ids, query}) -/> {
-
+    models <- findRoles(Role, ids)
+    { resultSet: wrapResult(models) }
   }
 )
 
@@ -44,14 +71,14 @@ createRole = withResources(
     // Check for pre-existence of role
     if id:
       existingRole <- Role~findRole(id)
-      if existingRole: return { created: false }
+      if existingRole: return { created: false, id }
       now role <- Role.create({id, name})
     else:
       now role <- Role.create({name})
 
     // Add abilities
     if abilities and abilities.length > 0:
-      <- setRoleAbilities({roleId: role.id, abilities})
+      <- setRoleAbilities({id: role.id, setAbilities: abilities})
 
     { created: true, id: role.id }
   }
@@ -73,6 +100,11 @@ deleteRole = withResources(
     q2 = UserRole.createQuery()
     q2.where(q2.Eq('roleId', id))
     <- [RoleAbility.destroyByQuery(q), UserRole.destroyByQuery(q2)]
+
+    // Wipe role
+    q3 = Role.createQuery()
+    q3.where(q.Eq('id', id))
+    <- Role.destroyByQuery(q3)
 
     return { deleted: true }
   }
@@ -105,6 +137,7 @@ setRoleAbilities = withResources(
 
     // Mode 1: set role abilities to a flat list, overwriting prior list
     if setAbilities?.length > 0:
+      log.trace("setAbilities for role", id, role.name)
       // Destroy prior list of role abilities
       q = RoleAbility.createQuery()
       q.where(
@@ -129,6 +162,7 @@ setRoleAbilities = withResources(
       <- [...for elem ability in addAbilities:
         json = Object.assign({}, ability, { roleId: id })
         delete json.id
+        log.trace("addAbility for role", id, role.name, json)
         [RoleAbility.create(json)]
       ]
 
@@ -192,3 +226,17 @@ setUserRoles = withResources(
     return {}
   }
 )
+
+export default {
+  bindings: {
+    "mesh.auth.RoleService": {
+      getRole
+      createRole
+      deleteRole
+      setRoleAbilities
+      getRoleAbilities
+      getUserRoles
+      setUserRoles
+    }
+  }
+}

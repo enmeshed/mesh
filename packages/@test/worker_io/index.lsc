@@ -11,7 +11,7 @@ import DistributedLockService from '@mesh/dls-redis'
 import EnvoyAuth from './grpc/EnvoyAuth'
 import Test from './grpc/Test'
 import DataManagementService from './grpc/DataManagementService'
-import UserAuthService from './grpc/User'
+import RbacService from '@mesh/rbac'
 
 // Events
 import TestEvents from './events/Test'
@@ -20,7 +20,7 @@ import TestEvents from './events/Test'
 import TestJobs from './jobs/Test'
 
 // Tasker services
-import '@mesh/tasker'
+// import '@mesh/tasker'
 
 // Log to stdout
 Log.addWriter(new StdoutLogWriter())
@@ -42,7 +42,7 @@ asyncMain() -/>
   svcMgr.bind('envoy_auth', EnvoyAuth.bindings)
   svcMgr.bind('goodbye', Test.bindings)
   svcMgr.bind('data_management', DataManagementService.bindings)
-  svcMgr.bind('userauth', UserAuthService.bindings)
+  svcMgr.bind('rbac', RbacService.bindings)
 
   // Offer all bound services
   <- svcMgr.autoStart()
@@ -56,8 +56,8 @@ asyncMain() -/>
   jobs.processAll(TestJobs.bindings)
 
   ///////////// Tasker
-  <- Container.get('tasker.runner')
-  <- Container.get('tasker.completionWatcher')
+  // <- Container.get('tasker.runner')
+  // <- Container.get('tasker.completionWatcher')
 
   healthCheck.setHealthy(true)
 

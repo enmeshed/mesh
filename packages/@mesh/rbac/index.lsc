@@ -1,0 +1,5 @@
+export * from './rbac-models'
+import bindings from './rbac-api'
+
+export { bindings }
+export default bindings

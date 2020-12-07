@@ -20,9 +20,8 @@ sessionCache = new SessionCache(60*1000)
 // Get session data, either from cache or remote
 getSessionData = withResources(
   {
-    UserAuthService: "grpc.client.protocol:mesh.auth.UserAuthService"
   }
-  getSessionData({UserAuthService},  sessionId) -/> {
+  getSessionData(_, sessionId) -/> {
     cached = sessionCache.get(sessionId)
     if cached: return cached
 
@@ -88,9 +87,8 @@ makeAnonymousResponse() ->
 Check = withResources(
   {
     Config: "config"
-    UserAuthService: "grpc.client.protocol:mesh.auth.UserAuthService"
   }
-  ({Config, UserAuthService}, req) -/>
+  ({Config}, req) -/>
     httpData = req?.attributes?.request?.http or {}
     { headers, method, path } = httpData
 

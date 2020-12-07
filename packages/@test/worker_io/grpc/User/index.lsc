@@ -7,36 +7,36 @@ import { toPlainObject } from '@ormojo/ephraim'
 
 Protocols.require('mesh/auth/UserAuthService.proto')
 
-atStartup(
-  withResources(
-    {
-      Tasker: "grpc.client.protocol:mesh.task.TaskManagementService"
-    }
-    createSessionReaperTask({Tasker}) -/> {
-      log.info('Creating session reaper task')
-      <- Tasker.createTask({
-        taskId: 'user.auth.sessionReaper'
-        description: "Check sessions for last activity notification and flag as inactive if too old."
-        schedule: {
-          repeat: {
-            every: 60000
-            reentrant: {
-              allow_reentrancy: false
-            }
-          }
-        }
-        runnable: {
-          grpc: {
-            target: {
-              service: 'mesh.auth.UserAuthService'
-              method: 'reapSessions'
-            }
-          }
-        }
-      })
-    }
-  )
-)
+// atStartup(
+//   withResources(
+//     {
+//       Tasker: "grpc.client.protocol:mesh.task.TaskManagementService"
+//     }
+//     createSessionReaperTask({Tasker}) -/> {
+//       log.info('Creating session reaper task')
+//       <- Tasker.createTask({
+//         taskId: 'user.auth.sessionReaper'
+//         description: "Check sessions for last activity notification and flag as inactive if too old."
+//         schedule: {
+//           repeat: {
+//             every: 60000
+//             reentrant: {
+//               allow_reentrancy: false
+//             }
+//           }
+//         }
+//         runnable: {
+//           grpc: {
+//             target: {
+//               service: 'mesh.auth.UserAuthService'
+//               method: 'reapSessions'
+//             }
+//           }
+//         }
+//       })
+//     }
+//   )
+// )
 
 
 newUser = withResources(

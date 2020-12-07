@@ -23,18 +23,16 @@
       "type": "grpc_mesh",
       "protocols": ["mesh.dtx.DistributedLockService"]
     },
+    "rbac": {
+      "type": "grpc_mesh",
+      "protocols": ["mesh.auth.RoleService"]
+    },
     "envoy_auth": {
       "type": "grpc_direct",
       "protocols": [
         "envoy.service.auth.v2.Authorization"
       ],
       "port": 12400
-    },
-    "userauth": {
-      "type": "grpc_mesh",
-      "protocols": [
-        "mesh.auth.UserAuthService"
-      ]
     },
     "data_management": {
       "type": "grpc_mesh",
@@ -84,13 +82,13 @@
         "api": {},
         "goodbye": {},
         "envoy_auth": {},
-        "userauth": {},
         "kafka": {},
         "redis": {},
         "mysql": {},
         "elasticsearch": {},
         "data_management": {},
-        "distributed_lock": {}
+        "distributed_lock": {},
+        "rbac": {}
       },
       "provider": {
         "api": {},
@@ -105,8 +103,8 @@
         "envoy_auth": "worker-io",
         "goodbye": "worker-io",
         "data_management": "worker-io",
-        "userauth": "worker-io",
         "distributed_lock": "worker-io",
+        "rbac": "worker-io",
         "kafka": "kafka_development",
         "mysql": "mysql_development",
         "redis": "redis_development",

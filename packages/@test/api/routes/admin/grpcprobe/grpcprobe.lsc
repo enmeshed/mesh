@@ -1,5 +1,7 @@
 // Enumerate available mesh services and protocols
 import { withResources } from '@enmeshed/meshnode'
+import { errors, CommonError } from '@enmeshed/errors'
+import util from 'util'
 
 isgRPCService(svc) ->
   match svc?.type:
@@ -7,30 +9,69 @@ isgRPCService(svc) ->
     | "grpc_mesh": true
     | else: false
 
+getServices(env) ->
+  [...for elem name in env.getServiceNames():
+    svc = env.getService(name)
+    if isgRPCService(svc):
+      svcData = { name: svc.name, protocols: svc.protocols }
+      [ svcData ]
+  ]
+
+getProtocols(env) ->
+  protocols = {}
+  for elem name in env.getServiceNames():
+    svc = env.getService(name)
+    if isgRPCService(svc):
+      for elem protocol in (svc.protocols or []):
+        protoDef = protocols[protocol] or (protocols[protocol] = {name: protocol})
+        protoDef.services = if not protoDef.services:
+          [name]
+        else:
+          [name].concat(protoDef.services)
+  protocols
+
+makeCaller(portName) ->
+  withResources(
+    {
+      "port": portName
+    }
+    ({port}, method, data) -> {
+      func = port[method]
+      if not func:
+        throw new errors.NotFoundError("port:method", `${portName}:${method}`)
+
+      func.call(port, data)
+    }
+  )
+
 export default (router) ->
   router.async('get', '/enum/services', withResources(
     {
       "node": "node"
     }
     enumServices({node}, req, res): void -/>
-      // Locate all GRPC services on the mesh
       env = node.environment
-      result = [...for elem name in env.getServiceNames():
-        svc = env.getService(name)
-        if isgRPCService(svc):
-          svcData = { name: svc.name, protocols: svc.protocols }
-          [ svcData ]
-      ]
-
+      result = getServices(env)
       res.status(200).json(result)
   ))
 
-  router.async('get', '/enum/methods', withResources(
+  router.async('get', '/enum/protocols', withResources(
+    {
+      "node": "node"
+    }
+    enumProtocols({node}, req, res): void -/>
+      env = node.environment
+      protocols = getProtocols(env)
+      result = [...for val v in protocols: [v]]
+      res.status(200).json(result)
+  ))
+
+  router.async('get', '/enum/service/methods', withResources(
     {
       "node": "node"
       "protos": "protocols"
     }
-    enumMethods({node, protos}, req, res): void -/>
+    enumServiceMethods({node, protos}, req, res): void -/>
       { service, protocol } = req.query
       env = node.environment
       svc = env.getService(service)
@@ -51,7 +92,34 @@ export default (router) ->
       res.status(200).json(result)
   ))
 
-  router.async('post', '/invoke/unary',
+  router.async('get', '/enum/protocol/methods', withResources(
+    {
+      "node": "node"
+      "protos": "protocols"
+    }
+    enumProtoMethods({node, protos}, req, res): void -/>
+      { protocol } = req.query
+      env = node.environment
+      protocols = getProtocols(env)
+      proto = protocols[protocol or '']
+      if not proto:
+        // XXX: Error
+        res.status(404).send("not found")
+        return
+
+      def <- protos.definition(protocol)
+      result = [...for key name, val method in def.methods:
+        if (not method.requestStream) and (not method.responseStream):
+          [{
+            name
+            arity: "unary"
+          }]
+      ]
+
+      res.status(200).json(result)
+  ))
+
+  router.async('post', '/invoke/service/unary',
     invokeUnary(req, res): void -/>
       { service, protocol, method, data } = req.body
       invoker = withResources(
@@ -61,5 +129,22 @@ export default (router) ->
         ({port}, method, data) -> port[method](data)
       )
       result <- invoker(method, data)
-      res.status(200).json({result})
+      res.status(200).json(result)
   )
+
+  router.async('post', '/invoke/protocol/unary', withResources(
+    { "node": "node" }
+    invokeUnary({node}, req, res): void -/>
+      { protocol, method, data } = req.body
+
+      validProtos = getProtocols(node.environment)
+      if not validProtos[protocol or '']:
+        throw new errors.NotFoundError("protocol", protocol)
+
+      invoker = makeCaller(`grpc.client.protocol:${protocol}`)
+      [result, err] <!- invoker(method, data)
+      if not err:
+        res.status(200).json(result)
+      else:
+        res.status(err.httpStatus or 500).json(CommonError.toJSON(err))
+  ))

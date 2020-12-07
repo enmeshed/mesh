@@ -34,7 +34,7 @@ message GetRoleRequest {
 }
 
 message GetRoleResponse {
-  GenericResultSet results = 1;
+  GenericResultSet resultSet = 1;
 }
 
 message CreateRoleRequest {
@@ -44,7 +44,7 @@ message CreateRoleRequest {
   // Role name
   string name = 2;
   // Initial collection of abilities to be assigned to the role
-  repeated Ability abilities = 2;
+  repeated Ability abilities = 3;
 }
 
 message CreateRoleResponse {
@@ -79,9 +79,9 @@ message SetRoleAbilitiesRequest {
   string id = 1;
 
   // oneof action
-  repeated string removeAbilityIds = 3;
-  repeated Ability addAbilities = 4;
-  repeated Ability setAbilities = 5;
+  repeated string removeAbilityIds = 2;
+  repeated Ability addAbilities = 3;
+  repeated Ability setAbilities = 4;
 }
 
 message SetRoleAbilitiesResponse {}
