@@ -1,0 +1,59 @@
+import React from 'react';
+import { styled } from 'baseui'
+
+getSvgStyles({$theme, $size, $color}) ->
+  let size = $theme.sizing.scale600;
+  if ($size) {
+    if ($theme.sizing[$size]) {
+      now size = $theme.sizing[$size];
+    } else if (typeof $size === 'number') {
+      now size = `${$size}px`;
+    } else {
+      now size = $size;
+    }
+  }
+
+  let color = 'currentColor';
+  if ($color) {
+    if ($theme.colors[$color]) {
+      now color = $theme.colors[$color];
+    } else {
+      now color = $color;
+    }
+  }
+
+  return {
+    display: 'inline-block',
+    height: size,
+    width: size,
+  };
+
+Svg = styled('svg', getSvgStyles)
+
+IconBase(props, ref) -> {
+  { children, title, size, color, ...restProps } = props
+  passThroughProps = {
+    title, color, size, $size: size,...restProps
+  }
+  <Svg data-baseweb="icon" ref={ref} {...passThroughProps}>
+    {title ? <title>{title}</title> : null}
+    {children}
+  </Svg>
+}
+
+FwdIconBase = React.forwardRef(IconBase)
+
+export default FwdIconBase
+
+export makeIcon(defaultTitle, path, opts={}) ->
+  viewBox = opts.viewBox or "0 0  24 24"
+  fill = opts.fill or "none"
+  stroke = opts.stroke or "currentColor"
+
+  React.forwardRef(Icon(props, ref) -> {
+    {title = defaultTitle, size, color, ...restProps} = props
+    <FwdIconBase viewBox={viewBox} ref={ref} title={title} size={size} color={color}
+      fill={fill} stroke={stroke} {...restProps}>
+      {path}
+    </FwdIconBase>
+  })

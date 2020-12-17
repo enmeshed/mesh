@@ -1,0 +1,3 @@
+useFetcher(key, initialPayload) ->
+  [payload, setPayload] = useState(initialPayload)
+  [state, dispatch] = useReducer()

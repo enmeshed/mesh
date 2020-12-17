@@ -1,0 +1,29 @@
+import React from 'react'
+import {
+  HeaderNavigation
+  ALIGN
+  StyledNavigationItem as NavigationItem
+  StyledNavigationList as NavigationList
+} from 'baseui/header-navigation'
+
+export TopNavbar({children}) ->
+  <HeaderNavigation overrides={{
+    Root: {
+      style: ({$theme}) -> {
+        paddingRight: $theme.sizing.scale500
+      }
+    }
+  }}>
+    {children}
+  </HeaderNavigation>
+
+export EmptyTopNavbar() ->
+  <TopNavbar>
+    <NavigationList $align={ALIGN.center}>
+      <NavigationItem style={{height: 48}}>
+      </NavigationItem>
+    </NavigationList>
+    <NavigationList $align={ALIGN.right}>
+
+    </NavigationList>
+  </TopNavbar>

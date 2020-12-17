@@ -1,0 +1,11 @@
+import React from 'react'
+import { Desktop, Mobile } from '../Layout'
+import { DesktopLayout } from './DesktopLayout'
+
+export MainScreen() ->
+  <React.Fragment>
+    <Desktop>{->
+        <DesktopLayout />
+    }</Desktop>
+    <Mobile>{-> "MOBILE"}</Mobile>
+  </React.Fragment>

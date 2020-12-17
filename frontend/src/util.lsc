@@ -1,0 +1,2 @@
+export toBorderString(obj) ->
+  `${obj.borderWidth} ${obj.borderStyle} ${obj.borderColor}`

@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package mesh.auth;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "mesh/GenericQuery.proto";
+import "mesh/GenericResultSet.proto";
+import "mesh/auth/SessionFingerprint.proto";
+
+service SessionService {
+  // Get information about a session or sessions
+  rpc getSession(GetSessionRequest) returns (GetSessionResponse);
+  // Get data associated with a session (key/value store)
+  rpc getSessionData(GetSessionDataRequest) returns (GetSessionDataResponse);
+  // Set data associated with a session
+  rpc setSessionData(SetSessionDataRequest) returns (SetSessionDataResponse);
+  // Begin a new session
+  rpc createSession(CreateSessionRequest) returns (CreateSessionResponse);
+  // Resume an existing session
+  rpc resumeSession(ResumeSessionRequest) returns (ResumeSessionResponse);
+  // Touch a session, indicating that it is currently active
+  rpc touchSession(TouchSessionRequest) returns (TouchSessionResponse);
+  // End a session
+  rpc endSession(EndSessionRequest) returns (EndSessionResponse);
+}
+
+message GetSessionRequest {
+  // oneof operation
+  string id = 1;
+  repeated string ids = 2;
+  GenericQuery query = 3;
+  // Get sessions expiring before the given time
+  google.protobuf.Timestamp expiresBefore = 4;
+}
+
+message GetSessionResponse {
+  GenericResultSet resultSet = 1;
+}
+
+message GetSessionDataRequest {
+  // id of session for which to get data
+  string sessionId = 1;
+}
+
+message GetSessionDataResponse {
+  // JSON data for session
+  google.protobuf.Struct sessionData = 1;
+}
+
+message SetSessionDataRequest {
+  // id of session for which to set data
+  string sessionId = 1;
+  // key-value pairs to set
+  google.protobuf.Struct sessionData = 2;
+}
+
+message SetSessionDataResponse {}
+
+message CreateSessionRequest {
+  // User who owns this session
+  string userId = 1;
+  // Device fingerprint for this session
+  SessionFingerprint fingerprint = 2;
+  // Expiration date for this session
+  google.protobuf.Timestamp expiresAt = 3;
+}
+
+message CreateSessionResponse {
+  // ID of created session
+  string id = 1;
+}

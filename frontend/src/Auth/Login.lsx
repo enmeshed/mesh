@@ -1,0 +1,119 @@
+import React, { useState } from 'react'
+
+
+import { useStyletron } from 'baseui'
+import { FormControl } from "baseui/form-control"
+import { Input } from 'baseui/input'
+import { Card, StyledBody as CardBody, StyledTitle as CardTitle, StyledAction as CardAction } from 'baseui/card'
+import { Button } from 'baseui/button'
+import { StyledLink as Link } from 'baseui/link'
+import { ParagraphMedium } from 'baseui/typography'
+
+import { HCentered, Centered, StickyTop } from '../Layout'
+import { SquareLogo } from '../Logo'
+
+LoginForm({state}) ->
+  match state.step:
+    | 'email':
+      <EmailForm state={state} />
+    | 'password':
+      <PasswordForm state={state} />
+
+EmailForm({state}) ->
+  <React.Fragment>
+    <HCentered>
+      <ParagraphMedium>
+        Enter your email address to get started
+      </ParagraphMedium>
+    </HCentered>
+  <form onSubmit={e ->
+    e.preventDefault()
+    console.log(`login for ${state.email}`)
+    state.setState(Object.assign({}, state, { step: "password" }))
+  }>
+    <FormControl error={state.emailError}>
+      <Input
+        autoFocus
+        type="email"
+        value={state.email}
+        onChange={e -> state.setState(Object.assign({}, state, { email: e.target.value, emailError: null }))}
+        placeholder="Email Address" clearable clearOnEscape
+        error={if state.emailError: true else: false}
+      />
+    </FormControl>
+      <Button
+        type="submit"
+        overrides={{
+          BaseButton: { style: { width: "100%" } }
+        }}
+      >
+        Continue
+      </Button>
+  </form>
+      <HCentered style={{marginTop: '8px'}}>
+      <Link href="#">Sign Up</Link>
+    </HCentered>
+  </React.Fragment>
+
+PasswordForm({state}) ->
+  <React.Fragment>
+    <HCentered>
+      <ParagraphMedium>
+        Enter your password
+      </ParagraphMedium>
+    </HCentered>
+  <form onSubmit={e ->
+    e.preventDefault()
+    console.log(`password entered`)
+    state.setState(Object.assign({}, state, { passwordError: "invalid email" }))
+  }>
+    <FormControl error={state.passwordError}>
+      <Input
+        autoFocus
+        type="password"
+        autoComplete="current-password"
+        value={state.password}
+        onChange={e -> state.setState(Object.assign({}, state, { password: e.target.value, passwordError: null }))}
+        placeholder="Password"
+        error={if state.passwordError: true else: false}
+      />
+    </FormControl>
+      <Button
+        type="submit"
+        overrides={{
+          BaseButton: { style: { width: "100%" } }
+        }}
+      >
+        Sign In
+      </Button>
+      <HCentered style={{marginTop: '8px'}}>
+      <Link href="#">Forgot your password?</Link>
+    </HCentered>
+  </form>
+  </React.Fragment>
+
+LoginCard({state}) ->
+  [css, theme] = useStyletron()
+  <Card overrides={{Root: { style: { width: `384px` } } }}>
+    <HCentered>
+      <SquareLogo size={128} />
+    </HCentered>
+    <HCentered>
+      <CardTitle>
+        Login
+      </CardTitle>
+    </HCentered>
+    <CardBody>
+      <LoginForm state={state} />
+    </CardBody>
+    <CardAction>
+
+    </CardAction>
+  </Card>
+
+export LoginScreen() ->
+  [state, setState] = useState({email: '', password: '', step: 'email'})
+  state.setState = setState
+  <Centered>
+    <LoginCard state={state} />
+  </Centered>

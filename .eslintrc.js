@@ -1,6 +1,9 @@
 module.exports = {
   "parser": "@lightscript/eslint-plugin",
-  "plugins": ["@lightscript/eslint-plugin"],
+  "plugins": [
+    "@lightscript/eslint-plugin",
+    "react"
+  ],
   "extends": [
     "plugin:@lightscript/recommended"
   ],

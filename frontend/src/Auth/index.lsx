@@ -1,0 +1,12 @@
+import React from 'react'
+import { Router } from '@reach/router'
+
+
+import { LoginScreen } from './Login'
+import { NotFound } from '../NotFound'
+
+export Auth() ->
+  <Router primary={false} component={React.Fragment}>
+    <LoginScreen path="login" />
+    <NotFound default noNavBar />
+  </Router>

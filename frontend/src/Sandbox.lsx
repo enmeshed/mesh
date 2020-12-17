@@ -1,0 +1,49 @@
+import React from 'react'
+import {
+  AppNavBar,
+  setItemActive
+} from "baseui/app-nav-bar"
+
+
+
+import ChevronRight from 'baseui/icon/chevron-right'
+
+import logo from './beelogo.svg'
+
+import {StickyTop, VerticalScrollArea, LeftDrawer} from './Layout'
+import {useStyletron, styled} from 'baseui'
+
+import { Label1 }  from "baseui/typography"
+
+
+
+export Navbar() ->
+  [mainItems, setMainItems] = React.useState([
+    { icon: ChevronDown, label: "Main A" },
+    {
+      active: true,
+      icon: ChevronDown,
+      label: "Main B",
+      navExitIcon: ChevronDown,
+      children: [
+        { icon: ChevronDown, label: "Secondary A" },
+        { icon: ChevronDown, label: "Secondary B" }
+      ]
+    }
+  ])
+  <AppNavBar
+    title="SimpliBuzz"
+    mainItems={mainItems}
+    onMainItemSelect={item => {
+      setMainItems(prev => setItemActive(prev, item));
+    }}
+  />
+
+
+StyledAppName = styled('div', ({$theme}) => ({
+  ...$theme.typography.font550,
+  textDecoration: 'none',
+  [$theme.mediaQuery.medium]: {
+    ...$theme.typography.font650,
+  },
+}));

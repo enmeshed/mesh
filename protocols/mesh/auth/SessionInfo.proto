@@ -5,6 +5,9 @@ package mesh.auth;
 import "google/protobuf/struct.proto";
 
 message SessionInfo {
+  // id of the session
   string id = 1;
-  google.protobuf.Struct payload = 2;
+  // id of the owning user
+  string userId = 2;
+  google.protobuf.Struct payload = 3;
 }

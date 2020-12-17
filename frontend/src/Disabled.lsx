@@ -1,0 +1,37 @@
+import React from 'react'
+
+import { useStyletron } from 'baseui'
+import { Card, StyledBody as CardBody, StyledTitle as CardTitle } from 'baseui/card'
+
+import { HCentered, Centered, StickyTop } from './Layout'
+import { EmptyTopNavbar } from './Navbar'
+import SadfaceIcon from './Icons/sadface'
+
+export DisabledCard() ->
+  [css, theme] = useStyletron()
+  <Card overrides={{Root: { style: { width: `384px` } } }}>
+    <HCentered>
+      <SadfaceIcon size={128} color={theme.colors.negative600} />
+    </HCentered>
+    <HCentered>
+      <CardTitle>
+        We're Sorry
+      </CardTitle>
+    </HCentered>
+    <CardBody>
+      This module is currently undergoing maintenance and is temporarily disabled. It'll be back soon!
+    </CardBody>
+  </Card>
+
+export Disabled({noNavBar}) ->
+  if noNavBar:
+    <Centered>
+      <DisabledCard />
+    </Centered>
+  else:
+    <StickyTop>
+      <EmptyTopNavbar />
+      <Centered>
+        <DisabledCard />
+      </Centered>
+    </StickyTop>

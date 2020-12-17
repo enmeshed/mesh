@@ -1,0 +1,154 @@
+import React from 'react'
+import { useNavigate, useLocation } from '@reach/router'
+
+import { toBorderString } from '../util'
+
+import { useStyletron } from 'baseui'
+import { Block } from 'baseui/block'
+import {
+  HeaderNavigation
+  ALIGN
+  StyledNavigationItem as NavigationItem
+  StyledNavigationList as NavigationList
+} from 'baseui/header-navigation'
+import { Navigation } from "baseui/side-navigation"
+
+import {StickyTopAndBottom, VerticalScrollArea} from '../Layout'
+import { SessionMenu } from './SessionMenu'
+import { WideLogo } from '../Logo'
+
+import CalendarIcon from '../Icons/calendar'
+import ContentIcon from '../Icons/content'
+import SettingsIcon from '../Icons/gear'
+import PostIcon from '../Icons/post'
+import HelpIcon from '../Icons/question'
+import DevIcon from '../Icons/terminal'
+
+LargeLabel(props) ->
+    <Block
+      data-baseweb="typo-labellarge"
+      {...props}
+      font={props.font || 'LabelLarge'}
+    />
+
+IconTitle({Icon, label}) ->
+  [css, theme] = useStyletron()
+  <div style={{paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
+
+    <Icon size={24} color={theme.colors.secondary} style={{marginRight: 8}} />
+    <LargeLabel>{ label }</LargeLabel>
+  </div>
+
+PlainTitle({label}) ->
+  <div style={{paddingTop: 8, paddingBottom: 8, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
+    {label}
+  </div>
+
+LogoNavbar() ->
+  <HeaderNavigation overrides={{
+    Root: {
+      style: ({$theme}) -> {
+        paddingLeft: $theme.sizing.scale500
+        paddingRight: $theme.sizing.scale500
+        color: 'white'
+      }
+    }
+  }}>
+    <NavigationList $align={ALIGN.left} >
+      <WideLogo height="48" />
+    </NavigationList>
+    <NavigationList $align={ALIGN.center} />
+  </HeaderNavigation>
+
+export LeftMenu() ->
+  [css, theme] = useStyletron()
+  navigate = useNavigate()
+  location = useLocation()
+  items=[
+    {
+      title: <IconTitle Icon={CalendarIcon} label={'Calendar'} />,
+      itemId: "/calendar"
+    }
+    {
+      title: <IconTitle Icon={PostIcon} label="Post" />
+      itemId: "/post"
+    }
+    {
+      title: <IconTitle Icon={ContentIcon} label="Content" />
+      itemId: "/content"
+      subNav: [
+        {
+          title: <PlainTitle label="Your Content" />
+          itemId: "/content/primary"
+        }
+        {
+          title: <PlainTitle label="SimpliBuzz Content" />
+          itemId: "/content/sb"
+        }
+        {
+          title: <PlainTitle label="Stock Photos by Pexels" />
+          itemId: "/content/stock_photos"
+        }
+      ]
+    }
+    {
+      title: <IconTitle Icon={SettingsIcon} label="Settings" />
+      itemId: "/settings"
+      subNav: [
+        {
+          title: <PlainTitle label="Social Media Accounts" />
+          itemId: "/settings/accounts"
+        }
+        {
+          title: <PlainTitle label="Calendars" />
+          itemId: "/settings/calendars"
+        }
+      ]
+    }
+    {
+      title: <IconTitle Icon={HelpIcon} label="Help" />
+      itemId: "/help"
+    }
+    {
+      title: <IconTitle Icon={DevIcon} label="Developer" />
+      itemId: "/dev"
+    }
+  ]
+
+  <StickyTopAndBottom>
+    <LogoNavbar />
+    <div style={{height: '100%'}}>
+      <VerticalScrollArea style={{
+        borderRight: toBorderString(theme.borders.border600)
+      }}>
+        <Navigation
+          overrides={{
+            NavItem: {
+              style: ({$active, $theme}) ->
+                {
+                  paddingTop: 0
+                  paddingBottom: 0
+                  ':hover': {
+                    color: $theme.colors.accent
+                  }
+                  ...if $active: {
+                    backgroundColor: $theme.colors.accent
+                    borderLeftColor: $theme.colors.accent
+                  }
+                }
+            }
+          }}
+          items={items}
+          onChange={({event, item}) ->
+            event.preventDefault()
+            navigate(`/main${item.itemId}`)
+          }
+          activePredicate={(item) ->
+            location.pathname.includes('main' + item.itemId)
+          }
+
+        />
+      </VerticalScrollArea>
+    </div>
+    <SessionMenu />
+  </StickyTopAndBottom>

@@ -1,0 +1,29 @@
+import React from 'react'
+import { Router, Redirect } from '@reach/router'
+
+import { LeftDrawer, Centered } from '../Layout'
+
+import { LeftMenu } from './LeftMenu'
+import { RightPlaceholder } from './PlaceholderContent'
+import { Disabled } from '../Disabled'
+
+NotFound() ->
+  <div>Not Found</div>
+
+MainRouter() ->
+  <Router primary={false} component={React.Fragment}>
+    <Disabled path="calendar/*" placeholderName="Calendar" />
+    <Disabled path="post/*" placeholderName="Post" />
+    <Disabled path="content/*" placeholderName="Content" />
+    <Disabled path="settings/*" placeholderName="Settings" />
+    <Redirect noThrow from="/" to="calendar" />
+    <NotFound default />
+  </Router>
+
+export DesktopLayout() ->
+  <React.Fragment>
+    <LeftDrawer open={true} drawerWidth={250}>
+      <LeftMenu />
+      <MainRouter />
+    </LeftDrawer>
+  </React.Fragment>

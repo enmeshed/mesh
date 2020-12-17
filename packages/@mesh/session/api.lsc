@@ -1,0 +1,242 @@
+import { Protocols, withResources, fieldChecks, atStartup } from '@enmeshed/meshnode'
+import { errors } from '@enmeshed/errors'
+import { Entity, toPlainObject } from '@ormojo/ephraim'
+
+findRoles(Role, ids) -/>
+  if not Array.isArray(ids): return null
+  q = Role.createQuery()
+  q.where(q.In('id', ids))
+  res <- Role.find(q)
+  if res.isEmpty():
+    return []
+  else:
+    return res.getResults()
+
+findRole(Role, id) -/>
+  if typeof(id) != 'string': return null
+  res <- findRoles(Role, [id])
+  res?[0] or null
+
+findRoleAbilities(RoleAbility, ids) -/>
+  if (not ids) or (ids.length == 0): return []
+  q = RoleAbility.createQuery()
+  q.where(q.In('roleId', ids))
+  rset <- RoleAbility.find(q)
+  [...for elem result in rset.getResults():
+    [result.toAbilityProtobuf()]
+  ]
+
+jsonify(obj) ->
+  if obj instanceof Entity:
+    toPlainObject(obj)
+  elif obj.toJSON:
+    obj.toJSON()
+  else:
+    obj
+
+wrapResult(models) ->
+  if (not models) or (models.length == 0):
+    {
+      result_count: 0
+      results: []
+    }
+  else:
+    {
+      result_count: models.length
+      results: [...for elem m in models: [jsonify(m)]]
+    }
+
+getRole = withResources(
+  {
+    "Role": "model:Role"
+  }
+  getRole({Role}, {ids, query}) -/> {
+    models <- findRoles(Role, ids)
+    { resultSet: wrapResult(models) }
+  }
+)
+
+createRole = withResources(
+  {
+    "Role": "model:Role"
+  }
+  createRole({ Role }, req) -/> {
+    fieldChecks.check(
+      req
+      fieldChecks.checkString('name', false)
+    )
+    { name, id, abilities } = req
+    let role = null
+
+    // Check for pre-existence of role
+    if id:
+      existingRole <- Role~findRole(id)
+      if existingRole: return { created: false, id }
+      now role <- Role.create({id, name})
+    else:
+      now role <- Role.create({name})
+
+    // Add abilities
+    if abilities and abilities.length > 0:
+      <- setRoleAbilities({id: role.id, setAbilities: abilities})
+
+    { created: true, id: role.id }
+  }
+)
+
+deleteRole = withResources(
+  {
+    "Role": "model:Role"
+    "UserRole": "model:UserRole"
+    "RoleAbility": "model:RoleAbility"
+  }
+  deleteRole({Role, UserRole, RoleAbility}, {id}) -/> {
+    role <- Role~findRole(id)
+    if not role: return { deleted: false }
+
+    // Wipe role abilities and membership
+    q = RoleAbility.createQuery()
+    q.where(q.Eq('roleId', id))
+    q2 = UserRole.createQuery()
+    q2.where(q2.Eq('roleId', id))
+    <- [RoleAbility.destroyByQuery(q), UserRole.destroyByQuery(q2)]
+
+    // Wipe role
+    q3 = Role.createQuery()
+    q3.where(q.Eq('id', id))
+    <- Role.destroyByQuery(q3)
+
+    return { deleted: true }
+  }
+)
+
+getRoleAbilities = withResources(
+  {
+    "RoleAbility": "model:RoleAbility"
+  }
+  getRoleAbilities({RoleAbility}, {ids}) -/> {
+    if not ids:
+      throw new errors.MissingArgumentError('ids')
+
+    abilities <- RoleAbility~findRoleAbilities(ids)
+
+    { abilities }
+  }
+)
+
+setRoleAbilities = withResources(
+  {
+    "RoleAbility": "model:RoleAbility"
+    "Role": "model:Role"
+    "events": "events"
+  }
+  setRoleAbilities({Role, RoleAbility, events}, { id, removeAbilityIds, addAbilities, setAbilities }) -/> {
+    role <- Role~findRole(id)
+    if not role:
+      throw new errors.NotFoundError('role', id)
+
+    // Mode 1: set role abilities to a flat list, overwriting prior list
+    if setAbilities?.length > 0:
+      log.trace("setAbilities for role", id, role.name)
+      // Destroy prior list of role abilities
+      q = RoleAbility.createQuery()
+      q.where(
+        q.Eq('roleId', id)
+      )
+      <- RoleAbility.destroyByQuery(q)
+      // Fallthrough to Mode 2 to add requested abilities
+      now removeAbilityIds = []
+      now addAbilities = setAbilities
+
+    if removeAbilityIds?.length > 0:
+      q = RoleAbility.createQuery()
+      q.where(
+        q.And(
+          q.In('id', removeAbilityIds)
+          q.Eq('roleId', id)
+        )
+      )
+      <- RoleAbility.destroyByQuery(q)
+
+    if addAbilities?.length > 0:
+      <- [...for elem ability in addAbilities:
+        json = Object.assign({}, ability, { roleId: id })
+        delete json.id
+        log.trace("addAbility for role", id, role.name, json)
+        [RoleAbility.create(json)]
+      ]
+
+    // Notify changed role
+    events.fire('rbac.role.changed', id)
+
+    return {}
+  }
+)
+
+getUserRoles = withResources(
+  {
+    "UserRole": "model:UserRole"
+    "RoleAbility": "model:RoleAbility"
+  }
+  getUserRoles({UserRole, RoleAbility}, {userId}) -/> {
+    q = UserRole.createQuery()
+    q.where(
+      q.Eq('userId', userId)
+    )
+    res <- UserRole.find(q)
+    roleIds = [...for elem result in res.getResults(): [result.roleId]]
+    abilities <- RoleAbility~findRoleAbilities(roleIds)
+
+    return { roleIds, abilities }
+  }
+)
+
+setUserRoles = withResources(
+  {
+    "UserRole": "model:UserRole"
+    "events": "events"
+  }
+  setUserRoles({UserRole, events}, {userId, addRoleIds, removeRoleIds, setRoleIds}) -/> {
+    // Mode 1: Set user roles to a list
+    if setRoleIds?.length > 0:
+      q = UserRole.createQuery()
+      q.where(q.Eq('userId', userId))
+      <- UserRole.destroyByQuery(q)
+      now addRoleIds = setRoleIds
+      now removeRoleIds = []
+
+    if removeRoleIds?.length > 0:
+      q = UserRole.createQuery()
+      q.where(
+        q.And(
+          q.Eq('userId', userId)
+          q.In('roleId', removeRoleIds)
+        )
+      )
+      <- UserRole.destroyByQuery(q)
+
+    if addRoleIds?.length > 0:
+      <- [...for elem roleId in addRoleIds:
+        [UserRole.create({userId, roleId})]
+      ]
+
+    // Notify change to user
+    events.fire('rbac.user.changed', userId)
+
+    return {}
+  }
+)
+
+export default {
+  bindings: {
+    "mesh.auth.RoleService": {
+      getRole
+      createRole
+      deleteRole
+      setRoleAbilities
+      getRoleAbilities
+      getUserRoles
+      setUserRoles
+    }
+  }
+}

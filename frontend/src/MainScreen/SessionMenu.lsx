@@ -1,0 +1,43 @@
+import React from 'react'
+
+import { toBorderString } from '../util'
+
+import { useStyletron, styled } from 'baseui'
+import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
+import {StatefulPopover, PLACEMENT, TRIGGER_TYPE} from 'baseui/popover'
+import { Button } from 'baseui/button'
+import { Block } from 'baseui/block'
+
+import UserProfileTile from './UserProfileTile'
+
+PopupContent() ->
+  [css, theme] = useStyletron()
+  <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px">
+    <Button overrides={{
+      BaseButton: { style: { width: '100%' } }
+    }}>Sign Out</Button>
+  </Block>
+
+export SessionMenu() ->
+  [css, theme] = useStyletron()
+  <div style={{
+    width: '100%'
+    borderRight: toBorderString(theme.borders.border600)
+    overflow: 'hidden'
+    paddingLeft: theme.sizing.scale300
+    paddingRight: theme.sizing.scale300
+    boxSizing: 'border-box'
+  }}>
+    <StatefulPopover
+      content={-> <PopupContent /> }
+      dismissOnEsc={true}
+      dismissOnClickOutside={true}
+      placement={PLACEMENT.top}
+      popperOptions={{modifiers: {flip: {enabled: false}}}}
+      triggerType={TRIGGER_TYPE.click}
+    >
+      <UserButton>
+        <UserProfileTile username="William Johnson" />
+      </UserButton>
+    </StatefulPopover>
+  </div>

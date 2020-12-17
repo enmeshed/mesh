@@ -1,0 +1,11 @@
+{
+  "name": "@mesh/session",
+  "version": "0.1.0",
+  "description": "An implementation of mesh.auth.SessionService.",
+  "dependencies": {
+    "@ormojo/ephraim": "^1.0.0",
+    "@ormojo/ormojo": "^1.0.0",
+    "@enmeshed/meshnode": "^0.1.0",
+    "cuid": "^2.1.8"
+  }
+}

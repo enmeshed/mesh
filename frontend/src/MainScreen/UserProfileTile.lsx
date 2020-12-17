@@ -1,0 +1,63 @@
+import React from 'react'
+
+import { styled } from 'baseui'
+import { LabelMedium, ParagraphSmall } from 'baseui/typography'
+import { Avatar } from 'baseui/avatar'
+
+UserProfileTileContainer = styled('div', ({$theme}) => {
+  return {
+    boxSizing: 'border-box',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    justifyContent: 'flex-start',
+    paddingTop: $theme.sizing.scale650,
+    paddingBottom: $theme.sizing.scale650,
+  };
+});
+
+UserProfilePictureContainer = styled(
+  'div',
+  ({$theme}) => {
+    return {
+      ...($theme.direction === 'rtl'
+        ? {marginLeft: $theme.sizing.scale600}
+        : {marginRight: $theme.sizing.scale600}),
+    };
+  },
+);
+
+UserProfileInfoContainer = styled('div', ({$theme}) => {
+  return {
+    boxSizing: 'border-box',
+    alignSelf: 'center',
+  };
+});
+
+export default function UserProfileTile(props) {
+  {overrides = {}, username, usernameSubtitle, userImgUrl} = props
+
+  return (
+    // Replace with a  profile tile renderer: renderUserProfileTile()
+    <UserProfileTileContainer>
+      <UserProfilePictureContainer>
+        <Avatar name={username || ''} src={userImgUrl} size={'48px'} overrides={{
+          Root: {
+            style: ({$theme}) -> {
+              backgroundColor: $theme.colors.brand3
+            }
+          }
+        }}/>
+      </UserProfilePictureContainer>
+      <UserProfileInfoContainer>
+        <LabelMedium>{username}</LabelMedium>
+        {usernameSubtitle ? (
+          <ParagraphSmall marginTop="0" marginBottom="0">
+            {usernameSubtitle}
+          </ParagraphSmall>
+        ) : null}
+      </UserProfileInfoContainer>
+    </UserProfileTileContainer>
+  );
+}
