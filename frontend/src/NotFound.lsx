@@ -10,7 +10,7 @@ import NotFoundIcon from './Icons/searchDocument'
 
 export NotFoundCard() ->
   [css, theme] = useStyletron()
-  <Card overrides={{Root: { style: { width: `384px` } } }}>
+  <Card overrides={{Root: { style: { width: "384px", maxWidth: "95vw" } } }}>
     <HCentered>
       <NotFoundIcon size={128} color={theme.colors.contentInverseSecondary} />
     </HCentered>
@@ -33,15 +33,7 @@ export NotFoundCard() ->
     </CardAction>
   </Card>
 
-export NotFound({noNavBar}) ->
-  if noNavBar:
-    <Centered>
-      <NotFoundCard />
-    </Centered>
-  else:
-    <StickyTop>
-      <EmptyTopNavbar />
-      <Centered>
-        <NotFoundCard />
-      </Centered>
-    </StickyTop>
+export NotFound() ->
+  <Centered>
+    <NotFoundCard />
+  </Centered>

@@ -1,0 +1,33 @@
+ICAL = require('ical.js')
+
+// Read an ICal calendar file, pushing all events into an object with
+// keys of the form "YYYY-MM-DD"
+export class ICal:
+  eventsByDate = {}
+
+  _addEvent(dt, data): void ->
+    { eventsByDate } = this
+    evs = eventsByDate[dt] or (eventsByDate[dt] = [])
+    evs.push(data)
+
+  // Load an iCal-formatted file into the events array
+  loadICal(data): void ->
+    jcal = ICAL.parse(data)
+    comp = new ICAL.Component(jcal)
+    events = comp.getAllSubcomponents("vevent")
+    for elem eventData in events:
+      event = new ICAL.Event(eventData)
+      if event.isRecurring():
+        iter = event.iterator()
+        while not iter.complete:
+          startDate = iter.next()
+          if startDate:
+            this._addEvent(startDate, { summary: event.summary })
+      else:
+        this._addEvent(event.startDate, { summary: event.summary })
+
+  getEvents(dt) ->
+    this.eventsByDate[dt or ''] or []
+
+  getFirstEvent(dt) ->
+    this.getEvents(dt)[0]

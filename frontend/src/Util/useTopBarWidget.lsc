@@ -1,0 +1,20 @@
+import { useEffect } from 'react'
+import { AppState } from '../Data/AppState'
+
+export useTopBarWidget(generator, watches = []) ->
+  useEffect(
+    ->
+      widget = generator(watches)
+      AppState.uxState.setTopBarWidget(widget)
+      return -> AppState.uxState.clearTopBarWidget(widget)
+    watches
+  )
+
+export useBackButton(dest, watches = []) ->
+  useEffect(
+    ->
+      data = {to: dest}
+      AppState.uxState.setMobileBackButton(data)
+      return -> AppState.uxState.clearMobileBackButton(data)
+    [dest].concat(watches)
+  )

@@ -12,7 +12,7 @@ import UserProfileTile from './UserProfileTile'
 
 PopupContent() ->
   [css, theme] = useStyletron()
-  <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px">
+  <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
     <Button overrides={{
       BaseButton: { style: { width: '100%' } }
     }}>Sign Out</Button>
@@ -24,7 +24,7 @@ export SessionMenu() ->
     width: '100%'
     borderRight: toBorderString(theme.borders.border600)
     overflow: 'hidden'
-    paddingLeft: theme.sizing.scale300
+    paddingLeft: '24px'
     paddingRight: theme.sizing.scale300
     boxSizing: 'border-box'
   }}>

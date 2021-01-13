@@ -1,0 +1,27 @@
+import { entity, field, types, Entity } from '@ormojo/ephraim'
+
+// User Interface state vars
+@entity({name: 'UxState'}) class UxState extends Entity:
+  // Is menu drawer open for small devices?
+  @field(types.boolean) isMenuOpen = false
+
+  // This React element will be displayed in the top navigation bar.
+  @field(types.any) injectedTopBarControl = null
+  setTopBarWidget(widget): void -> this.injectedTopBarControl = widget
+  clearTopBarWidget(widget): void ->
+    if this.injectedTopBarControl == widget:
+      this.injectedTopBarControl = null
+
+  // On mobile, this is used to display the Back '<' navigation button
+  // rather than the hamburger menu.
+  //
+  // Data is a nonce object of the form { to: "/app/path/here" } which
+  // should be cached and cleared at unmount.
+  @field(types.any) useMobileBackButton = null
+  setMobileBackButton(data): void -> this.useMobileBackButton = data
+  clearMobileBackButton(data): void ->
+    if this.useMobileBackButton == data:
+      this.useMobileBackButton = null
+
+
+export { UxState }

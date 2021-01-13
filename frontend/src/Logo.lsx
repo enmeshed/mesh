@@ -1,9 +1,13 @@
 import React from 'react'
 import wideLogo from './full_no_hexagons.svg'
 import squareLogo from './beelogo.svg'
+import menuLogo from './BeeHamburgerMenu.svg'
 
 export WideLogo(props) ->
   <img src={wideLogo} alt="logo" {...props} />
 
 export SquareLogo(props) ->
   <img src={squareLogo} alt="logo" {...props} />
+
+export MenuLogo(props) ->
+  <img src={menuLogo} alt="menu" {...props} />

@@ -4,12 +4,13 @@ import { useStyletron } from 'baseui'
 import { Card, StyledBody as CardBody, StyledTitle as CardTitle } from 'baseui/card'
 
 import { HCentered, Centered, StickyTop } from './Layout'
-import { EmptyTopNavbar } from './Navbar'
+import { MenuToggleNavbar as Navbar } from './Navbar'
 import SadfaceIcon from './Icons/sadface'
+import { useTopBarWidget } from './Util/useTopBarWidget'
 
 export DisabledCard() ->
   [css, theme] = useStyletron()
-  <Card overrides={{Root: { style: { width: `384px` } } }}>
+  <Card overrides={{Root: { style: { width: `384px`, maxWidth: "95vw" } } }}>
     <HCentered>
       <SadfaceIcon size={128} color={theme.colors.negative600} />
     </HCentered>
@@ -23,15 +24,10 @@ export DisabledCard() ->
     </CardBody>
   </Card>
 
-export Disabled({noNavBar}) ->
-  if noNavBar:
-    <Centered>
-      <DisabledCard />
-    </Centered>
-  else:
-    <StickyTop>
-      <EmptyTopNavbar />
-      <Centered>
-        <DisabledCard />
-      </Centered>
-    </StickyTop>
+export Disabled({placeholderName}) ->
+  if placeholderName:
+    useTopBarWidget(-> <span>{placeholderName}</span>)
+
+  <Centered>
+    <DisabledCard />
+  </Centered>

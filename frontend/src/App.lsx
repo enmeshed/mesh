@@ -13,6 +13,9 @@ import { NotFound } from './NotFound'
 
 import Color from 'color'
 
+textFor(color) ->
+  if Color(color).isLight(): "#000000" else: "#FFFFFF"
+
 engine = new Styletron()
 accent = '#FEC715'
 secondary = '#273691'
@@ -30,11 +33,22 @@ theme = createTheme({
     buttonPrimaryFill: secondary
     buttonPrimaryActive: Color(secondary).lighten(0.2).hex()
     buttonPrimaryHover: Color(secondary).lighten(0.4).hex()
+    secondaryText: textFor(secondary)
+    accentText: textFor(accent)
+    warningText: "#FFFFFF"
     brand3
+    brand3Text: textFor(brand3)
     brand4
+    brand4Text: textFor(brand4)
     brand5
+    brand5Text: textFor(brand5)
     brand6
+    brand6Text: textFor(brand6)
     brand7
+    brand7Text: textFor(brand7)
+  }
+  borders: {
+    buttonBorderRadius: '6px'
   }
 })
 

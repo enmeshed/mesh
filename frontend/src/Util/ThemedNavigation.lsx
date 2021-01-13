@@ -1,0 +1,55 @@
+import React from 'react'
+import { useNavigate, useLocation } from '@reach/router'
+
+import { AppState } from '../Data/AppState'
+
+import { Navigation } from "baseui/side-navigation"
+import { StyledLink } from 'baseui/link'
+
+export ThemedNavigation({prefix, ...restProps}) ->
+  navigate = useNavigate()
+  location = useLocation()
+  <Navigation
+    overrides={{
+      NavItem: {
+        style: ({$active, $theme}) ->
+          {
+            paddingTop: 0
+            paddingBottom: 0
+            ':hover': {
+              color: $theme.colors.accent
+            }
+            ...if $active: {
+              backgroundColor: $theme.colors.accent
+              borderLeftColor: $theme.colors.accent
+            }
+          }
+      }
+    }}
+    onChange={({event, item}) ->
+      event.preventDefault()
+      dest = `/${prefix}${item.itemId}`
+      navigate(dest)
+      AppState.didNavigate(dest)
+    }
+    activePredicate={(item) ->
+      location.pathname.includes(prefix + item.itemId)
+    }
+    {...restProps}
+  />
+
+shouldNavigate() -> true
+
+export Link({to, ...restProps}) ->
+  navigate = useNavigate()
+  href = to
+
+  onClick = (event) ->
+    if shouldNavigate(event):
+      event.preventDefault()
+      navigate(href)
+
+  <StyledLink
+    {...restProps}
+    onClick={onClick}
+  />

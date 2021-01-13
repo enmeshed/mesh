@@ -1,0 +1,17 @@
+import { entity, field, types, createMemory, Entity } from '@ormojo/ephraim'
+
+import { UxState } from './UxState'
+
+globalThis = require('globalthis')()
+
+@entity({name: 'AppState'}) class AppState extends Entity {
+  @field(UxState) uxState = {}
+
+  didNavigate(dest) ->
+    this.uxState.isMenuOpen = false
+}
+
+thisAppState = createMemory(AppState)
+globalThis.appState = thisAppState
+
+export { thisAppState as AppState }

@@ -1,0 +1,24 @@
+import {useState, useEffect} from 'react'
+import { observeField } from './observeField'
+
+export useObservable(observableGenerator, initialState) ->
+  [value, setValue] = useState(initialState)
+
+  observable = observableGenerator()
+
+  useEffect(
+    -> {
+      subscription = observable.subscribe({
+        next(val) ->
+          setValue(val)
+      })
+
+      return (-> subscription.unsubscribe())
+    }
+    []
+  )
+
+  value
+
+export useObservableField(entity, field) ->
+  useObservable(-> observeField(entity, field), entity[field])

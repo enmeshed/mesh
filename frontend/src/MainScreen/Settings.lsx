@@ -1,0 +1,127 @@
+import React from 'react'
+import { Router, Redirect } from '@reach/router'
+
+import { toBorderString } from '../util'
+import { useTopBarWidget, useBackButton } from '../Util/useTopBarWidget'
+
+import { useStyletron } from 'baseui'
+import { Breadcrumbs } from 'baseui/breadcrumbs'
+
+import { LeftDrawer, StickyTop, VerticalScrollArea, useIsMobile } from '../Layout'
+import { MenuToggleNavbar } from '../Navbar'
+import { SubmenuTitle } from '../Util/Labels'
+import { ThemedNavigation, Link } from '../Util/ThemedNavigation'
+import { NotFound } from '../NotFound'
+import { Disabled } from '../Disabled'
+
+import CalendarIcon from '../Icons/calendar'
+
+settingsMap = {
+  settings: {
+    name: "Settings"
+    Component: SettingsRoot
+    path: []
+  }
+  security: {
+    name: "Security and Password"
+    Component: Disabled
+    path: ['security']
+  }
+  socialaccounts: {
+    name: "Social Media Accounts"
+    Component: Disabled
+    path: ['socialaccounts']
+  }
+  calendars: {
+    name: "Calendars"
+    Component: Disabled
+    path: ['calendars']
+  }
+  billing: {
+    name: "Billing"
+    Component: Disabled
+    path: ['billing']
+  }
+  notifications: {
+    name: "Notifications"
+    Component: Disabled
+    path: ['notifications']
+  }
+  about: {
+    name: "About"
+    Component: Disabled
+    path: ['about']
+  }
+}
+
+useBreadcrumbs(id) ->
+  settingsData = settingsMap[id]
+
+  useTopBarWidget(->
+    <Breadcrumbs>
+      <Link to="/main/settings">Settings</Link>
+      {...for elem p in settingsData.path:
+        breadcrumbData = settingsMap[p]
+        dest = `/main/settings/${breadcrumbData.path.join('/')}`
+        <Link key={id} to={dest}>{breadcrumbData.name}</Link>
+      }
+    </Breadcrumbs>
+  )
+
+  if settingsData.path.length == 1:
+    useBackButton(-1)
+
+RouterEntry({id}) ->
+  { Component, path } = settingsMap[id]
+  useBreadcrumbs(id)
+  <Component path={path[path.length - 1]} id={id} />
+
+SettingsRoot() ->
+  isMobile = useIsMobile()
+  if isMobile {
+    <SettingsMenu />
+  } else {
+    <div />
+  }
+
+SettingsRouter() ->
+  <Router primary={false} component={React.Fragment}>
+    {...for key k, val { path } in settingsMap:
+      truePath = if path.length == 0: '/' else: path.join('/')
+      <RouterEntry key={k} id={k} path={truePath} />
+    }
+    <NotFound default />
+  </Router>
+
+SettingsMenuItems() ->
+  items = [
+    ...for key k, val { path, name } in settingsMap:
+      if path.length == 1:
+        [{
+          title: <SubmenuTitle label={name} />
+          itemId: `/${path[0]}`
+        }]
+  ]
+  <ThemedNavigation prefix="main/settings" items={items} />
+
+SettingsMenu() ->
+  [css, theme] = useStyletron()
+
+  <div style={{height: '100%'}}>
+    <VerticalScrollArea style={{
+      borderRight: toBorderString(theme.borders.border600)
+    }}>
+      <SettingsMenuItems />
+    </VerticalScrollArea>
+  </div>
+
+export Settings() ->
+  isMobile = useIsMobile()
+  if isMobile {
+    <SettingsRouter />
+  } else {
+    <LeftDrawer open={true} drawerWidth={250}>
+      <SettingsMenu />
+      <SettingsRouter />
+    </LeftDrawer>
+  }

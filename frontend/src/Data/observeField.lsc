@@ -1,0 +1,6 @@
+import { observe } from '@ormojo/ephraim'
+import { map } from '@ormojo/fobs'
+
+export observeField(entity, field) ->
+  base = observe(entity)[field]
+  base~map(ent -> ent[field])

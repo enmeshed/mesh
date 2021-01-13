@@ -1,0 +1,6 @@
+import { useHolidayCalendar } from '../../Util/useHolidayCalendar'
+
+export useDayEvents(mom) ->
+  holidays = useHolidayCalendar(mom)
+
+  holidays

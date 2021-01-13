@@ -1,0 +1,369 @@
+import React, { useMemo, useState } from 'react'
+import { useNavigate } from '@reach/router'
+import { useStyletron } from 'baseui'
+
+import { toBorderString } from '../../util'
+import { useTopBarWidget } from '../../Util/useTopBarWidget'
+import { useSharedState } from '../../Util/useSharedState'
+import { useIsMobile } from '../../Layout'
+import { useDayEvents } from './CalendarData'
+
+import { Label1, Label2, Label4 } from 'baseui/typography'
+import { Button } from 'baseui/button'
+import { ButtonGroup } from 'baseui/button-group'
+import { Select } from "baseui/select"
+import {StatefulPopover} from 'baseui/popover'
+import { Block } from 'baseui/block'
+import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
+import ChevronLeft from "baseui/icon/chevron-left"
+import ChevronRight from "baseui/icon/chevron-right"
+import Overflow from 'baseui/icon/overflow'
+
+globalThis = require('globalthis')()
+
+// moment-timezone is loaded by index.html from CDN
+moment = globalThis.moment
+
+momentForZone(zone, ...args) ->
+  if zone:
+    moment.tz(...args, zone)
+  else:
+    moment(...args)
+
+// Helper for generating a monthview calendar. Creates an array of day objects
+// of the following form:
+// {
+//    index: index of this day object in the array
+//    epoch: one of 'past', 'present', or 'future'
+//    date: moment object representing this date
+//    day: stringified day of month
+//    month: one of 'previous', 'current', or 'next' if this date is in the respective month
+//    start: moment object representing the start of the day
+//    end: moment object representing the end of the day
+// }
+daysForMonth(dateInMonth, forceSixRows, zone) ->
+  date = momentForZone(zone, dateInMonth).startOf('month')
+  yesterday = momentForZone(zone).startOf('day')
+  tomorrow = momentForZone(zone).endOf('day')
+  rows = []
+  let days = null
+  let index = 0
+  let i = 0
+
+  makeDay(date, month): void ->
+    // Create new row if needed
+    if index % 7 == 0:
+      now days = []
+      rows.push(days)
+
+    // Create day object and advance index
+    epoch = if date < yesterday: 'past' elif date > tomorrow: 'future' else: 'present'
+    days.push(
+      { index, epoch, date, month, start: moment(date).startOf('day'), end: moment(date).endOf('day'), day: date.format('D') }
+    )
+    index++
+
+  getLastDay() ->
+    row = rows[rows.length - 1]
+    row[row.length - 1]
+
+  // Add days from prior month to start of first week on calendar
+  nPriorDays = date.weekday()
+  trueStartDay = moment(date).subtract(nPriorDays, 'days')
+  while i < nPriorDays:
+    makeDay(moment(trueStartDay).add(i, 'days'), 'previous')
+    i++
+
+  // Add days for current month
+  nDays = date.daysInMonth()
+  now i = 1
+  while i <= nDays:
+    makeDay(momentForZone(zone, [date.year(), date.month(), i]), 'current')
+    i++
+
+  // Fill out the last week
+  lastWeekStart = moment(date).endOf('month')
+  now i = 1
+  while (days.length % 7) != 0:
+    makeDay(moment(lastWeekStart).add(i, 'days'), 'next')
+    i++
+
+  // Force a sixth row on the calendar if desired
+  if forceSixRows and rows.length < 6:
+    start = moment(getLastDay().date).add(1, 'days')
+    while index < 42:
+      makeDay(moment(start), 'next')
+      start.add(1, 'days')
+
+  rows
+
+// Row of the month view
+Row({children, height}) ->
+  [ css, theme ] = useStyletron()
+  <div className={css({
+    display: 'flex'
+    boxSizing: 'border-box'
+    width: '100%'
+    ...if height: { height }
+    borderBottom: toBorderString(theme.borders.border600)
+  })}>
+    {children}
+  </div>
+
+// Weekday tiles at the top of the month view
+MonthHeader({small}) ->
+  [ css ] = useStyletron()
+
+  <Row>
+    { ...for let i=0; i<7; i++:
+      <WeekdayHeader weekday={i} key={i} small={small} />
+    }
+  </Row>
+
+dayNames=["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+shortDayNames = ["S", "M", "T", "W", "T", "F", "S"]
+WeekdayHeader({weekday, small}) ->
+  [ css, theme ] = useStyletron()
+  <div className={css({
+    width: '14.2857142%'
+    borderRight: toBorderString(theme.borders.border600)
+    display: 'flex'
+    justifyContent: 'center'
+    backgroundColor: theme.colors.accent
+  })}>
+    <Label1 style={{color: theme.colors.accentText}}>
+      {if small: shortDayNames[weekday] else: dayNames[weekday]}
+    </Label1>
+  </div>
+
+// Day tiles in the center of the month view
+Day({day: {date, day, month, epoch}, small}) ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+  bgColor = if month == 'current': '#FFFFFF' else: theme.colors.backgroundSecondary
+  toDay = (ev) ->
+    ev.preventDefault()
+    navigate(`/main/calendar/${date.format('YYYY')}/${date.format('MM')}/${date.format('DD')}`)
+  events = useDayEvents(date)
+
+  <div
+    className={css({
+      width: '14.2857142%'
+      display: 'flex'
+      flexDirection: 'column'
+      alignItems: 'center'
+      boxSizing: 'border-box'
+      borderRight: toBorderString(theme.borders.border600)
+      backgroundColor: bgColor
+    })}
+    onClick={toDay}
+  >
+    <DayNumber day={day} small={small} isToday={epoch == 'present'} />
+    <div className={css({flex: 1})} />
+    <EventBlock events={events} small={small} />
+  </div>
+
+DayNumber({day, small, isToday}) ->
+  font = if small: 'LabelXSmall' else: 'LabelMedium'
+  blockProps = {
+    font
+    color: "primary"
+    display: "flex"
+    justifyContent: "center"
+    alignItems: "center"
+    width: "1.6em"
+    height: "1.6em"
+    ...if isToday: {
+      color: "secondaryText"
+      backgroundColor: "secondary"
+      style: {
+        borderRadius: '1.6em'
+      }
+    }
+  }
+
+  <Block {...blockProps}>
+    <span>{day}</span>
+  </Block>
+
+EventBlock({events, small}) ->
+  [ css ] = useStyletron()
+  <React.Fragment>
+    {...for idx i, elem event in events:
+      <Block
+        key={i}
+        marginBottom="scale300"
+        font="LabelSmall"
+        backgroundColor="backgroundTertiary"
+        maxWidth="90%"
+        width="90%"
+        paddingLeft="scale200"
+        paddingRight="scale200"
+        className={css({
+          boxSizing: 'border-box'
+          overflow: 'hidden'
+          whiteSpace: 'nowrap'
+          textOverflow: 'ellipsis'
+          textAlign: 'center'
+          borderRadius: '6px'
+        })}
+      >
+        {event.summary}
+      </Block>
+    }
+  </React.Fragment>
+
+
+// Body of the month view, generating a tile for each day
+MonthBody({small, zone, yearNumber, monthNumber}) ->
+  [ css ] = useStyletron()
+
+  rows = useMemo(
+    ->
+      dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
+      daysForMonth(dayInMonth, true, zone)
+    [zone, yearNumber, monthNumber]
+  )
+
+  <div className={css({
+    flex: 1
+    display: 'flex'
+    flexWrap: 'wrap'
+  })}>
+    {...for idx ri, elem row in rows:
+      <Row key={ri} height="16.6666666%">
+        {...for elem day in row:
+          <Day day={day} key={day.index} small={small} />
+        }
+      </Row>
+    }
+  </div>
+
+// Month controller
+export Month({year, month}) ->
+  [ css ] = useStyletron()
+  small = useIsMobile()
+
+  yearNumber = +year
+  monthNumber = (+month)-1
+  zone = null
+
+  dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
+
+  // Install top bar controls to change month
+  useTopBarWidget(-> <MonthNavbarWidget dayInMonth={dayInMonth} zone={zone} />, [ yearNumber, monthNumber, zone ])
+
+  <div className={css({
+    width: '100%'
+    height: '100%'
+    display: 'flex'
+    flexDirection: 'column'
+  })}>
+    <MonthHeader small={small} />
+    <MonthBody small={small} yearNumber={yearNumber} monthNumber={monthNumber} />
+  </div>
+
+// Top bar widget to move between months/calendars
+MonthNavbarWidget({dayInMonth, zone}) ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+  isMobile = useIsMobile()
+
+  prevMo = moment(dayInMonth).subtract(1, 'months')
+  nextMo = moment(dayInMonth).add(1, 'months')
+  thisMo = momentForZone(zone)
+
+  makeLink(mo) ->
+    (ev): void ->
+      ev.preventDefault()
+      navigate(`/main/calendar/${mo.format('YYYY')}/${mo.format('MM')}`)
+
+  toPrev = makeLink(prevMo)
+  toNext = makeLink(nextMo)
+  toNow = makeLink(thisMo)
+
+  <div className={css({
+    display: 'flex'
+    alignItems: 'center'
+  })}>
+    <ButtonGroup>
+      <Button onClick={toNow}>Today</Button>
+      <Button onClick={toPrev} style={{
+        paddingLeft: theme.sizing.scale500
+        paddingRight: theme.sizing.scale500
+        paddingTop: theme.sizing.scale400
+        paddingBottom: theme.sizing.scale400
+      }}>
+        <ChevronLeft size={theme.sizing.scale800} />
+      </Button>
+      <Button onClick={toNext} style={{
+        paddingLeft: theme.sizing.scale500
+        paddingRight: theme.sizing.scale500
+        paddingTop: theme.sizing.scale400
+        paddingBottom: theme.sizing.scale400
+      }}>
+        <ChevronRight size={theme.sizing.scale800} />
+      </Button>
+    </ButtonGroup>
+    <Label1 style={{marginLeft: theme.sizing.scale600}}>
+      {dayInMonth.format("MMM YYYY")}
+    </Label1>
+    <div className={css({flex: 1})} />
+    { if isMobile:
+      <MobileExtraControl />
+    }
+    { if not isMobile:
+      <CalendarSelect />
+    }
+  </div>
+
+MobileExtraControl(props) ->
+  <StatefulPopover
+    content={-> <MobileExtraPopupContent {...props} /> }
+    dismissOnEsc={true}
+    dismissOnClickOutside={true}
+    placement="bottomLeft"
+    popperOptions={{modifiers: {flip: {enabled: false}}}}
+    triggerType="click"
+  >
+    <UserButton>
+      <Overflow size={32} />
+    </UserButton>
+  </StatefulPopover>
+
+MobileExtraPopupContent() ->
+  [css, theme] = useStyletron()
+  <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
+    <CalendarSelect />
+  </Block>
+
+// Calendar selector
+CalendarSelect() ->
+  calendars = [
+    { label: 'Your Calendar', id: '31337' }
+    { label: 'Manage Calendars...', id: '0', manage: true }
+  ]
+  [ calOpt, setCalOpt ] = useState([ calendars[0] ])
+  navigate = useNavigate()
+
+  setCalendar(value) ->
+    if value?[0]?.manage:
+      navigate('/main/settings/calendars')
+    else:
+      setCalOpt(value)
+
+  <Select
+    overrides={{
+      Root: {
+        style: {
+          maxWidth: '250px'
+        }
+      }
+    }}
+    searchable={false}
+    clearable={false}
+    required
+    options={ calendars }
+    value={ calOpt }
+    onChange={ ({value}) -> setCalendar(value) }
+  />

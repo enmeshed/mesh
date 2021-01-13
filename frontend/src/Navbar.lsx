@@ -1,10 +1,20 @@
 import React from 'react'
+import { useNavigate } from '@reach/router'
+
 import {
   HeaderNavigation
   ALIGN
   StyledNavigationItem as NavigationItem
   StyledNavigationList as NavigationList
 } from 'baseui/header-navigation'
+import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
+import ChevronLeft from "baseui/icon/chevron-left"
+
+import { MenuLogo, WideLogo } from './Logo'
+import { useIsMobile } from './Layout'
+import { AppState } from './Data/AppState'
+import { observeField } from './Data/observeField'
+import { useObservable, useObservableField } from './Data/useObservable'
 
 export TopNavbar({children}) ->
   <HeaderNavigation overrides={{
@@ -17,13 +27,66 @@ export TopNavbar({children}) ->
     {children}
   </HeaderNavigation>
 
-export EmptyTopNavbar() ->
+export EmptyTopNavbar({height = 48}) ->
   <TopNavbar>
     <NavigationList $align={ALIGN.center}>
-      <NavigationItem style={{height: 48}}>
+      <NavigationItem style={{height}}>
       </NavigationItem>
     </NavigationList>
     <NavigationList $align={ALIGN.right}>
 
     </NavigationList>
   </TopNavbar>
+
+export GeneralNavbar({height = 48}) ->
+  isMobile = useIsMobile()
+  navigate = useNavigate()
+  widget = useObservable(-> observeField(AppState.uxState, "injectedTopBarControl"), false)
+  backButton = useObservableField(AppState.uxState, "useMobileBackButton")
+
+  toggleMenu() ->
+    AppState.uxState.isMenuOpen = (not AppState.uxState.isMenuOpen)
+
+  goBack() ->
+    if backButton:
+      navigate(backButton.to)
+
+  <HeaderNavigation overrides={{
+    Root: {
+      style: ({$theme}) -> {
+        paddingLeft: $theme.sizing.scale500
+        paddingRight: $theme.sizing.scale500
+      }
+    }
+  }}>
+    <NavigationList $align={ALIGN.left} >
+      {
+        if not isMobile:
+          <WideLogo height={height} />
+      }
+      {
+        if isMobile and (not backButton):
+          <UserButton onClick={toggleMenu}>
+            <MenuLogo height={height} />
+          </UserButton>
+      }
+      {
+        if isMobile and backButton:
+          <UserButton onClick={goBack}>
+            <ChevronLeft size={height} title={"Back"} />
+          </UserButton>
+      }
+    </NavigationList>
+    <NavigationList style={{paddingLeft: '8px', paddingRight: '8px'}}>
+      {
+        if Array.isArray(widget):
+          widget
+        elif widget:
+          <NavigationItem style={{flex: 1}}>
+            {widget}
+          </NavigationItem>
+      }
+    </NavigationList>
+  </HeaderNavigation>
+
+export MenuToggleNavbar = GeneralNavbar

@@ -2,17 +2,23 @@ import React from 'react'
 import { useMediaQuery } from 'react-responsive'
 import { useStyletron } from 'baseui'
 
-export Desktop({children: renderProp}) ->
+export useIsDesktop() ->
   [css, theme] = useStyletron()
-  rightSize = useMediaQuery({query: `(min-width: ${theme.breakpoints.large}px)`})
+  useMediaQuery({query: `(min-width: ${theme.breakpoints.large}px)`})
+
+export useIsMobile() ->
+  [css, theme] = useStyletron()
+  useMediaQuery({query: `(max-width: ${theme.breakpoints.large}px)`})
+
+export Desktop({children: renderProp}) ->
+  rightSize = useIsDesktop()
   if rightSize:
     renderProp()
   else:
     null
 
 export Mobile({children: renderProp}) ->
-  [css, theme] = useStyletron()
-  rightSize = useMediaQuery({query: `(max-width: ${theme.breakpoints.large}px)`})
+  rightSize = useIsMobile()
   if rightSize:
     renderProp()
   else:

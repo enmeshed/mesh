@@ -1,18 +1,17 @@
 import React from 'react'
-import { useNavigate, useLocation } from '@reach/router'
 
 import { toBorderString } from '../util'
 
 import { useStyletron } from 'baseui'
-import { Block } from 'baseui/block'
 import {
   HeaderNavigation
   ALIGN
   StyledNavigationItem as NavigationItem
   StyledNavigationList as NavigationList
 } from 'baseui/header-navigation'
-import { Navigation } from "baseui/side-navigation"
 
+import { ThemedNavigation } from '../Util/ThemedNavigation'
+import { IconTitle, PlainTitle } from '../Util/Labels'
 import {StickyTopAndBottom, VerticalScrollArea} from '../Layout'
 import { SessionMenu } from './SessionMenu'
 import { WideLogo } from '../Logo'
@@ -24,27 +23,9 @@ import PostIcon from '../Icons/post'
 import HelpIcon from '../Icons/question'
 import DevIcon from '../Icons/terminal'
 
-LargeLabel(props) ->
-    <Block
-      data-baseweb="typo-labellarge"
-      {...props}
-      font={props.font || 'LabelLarge'}
-    />
 
-IconTitle({Icon, label}) ->
-  [css, theme] = useStyletron()
-  <div style={{paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
 
-    <Icon size={24} color={theme.colors.secondary} style={{marginRight: 8}} />
-    <LargeLabel>{ label }</LargeLabel>
-  </div>
-
-PlainTitle({label}) ->
-  <div style={{paddingTop: 8, paddingBottom: 8, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
-    {label}
-  </div>
-
-LogoNavbar() ->
+LogoNavbar({height = 48}) ->
   <HeaderNavigation overrides={{
     Root: {
       style: ({$theme}) -> {
@@ -55,15 +36,12 @@ LogoNavbar() ->
     }
   }}>
     <NavigationList $align={ALIGN.left} >
-      <WideLogo height="48" />
+      <WideLogo height={height} />
     </NavigationList>
     <NavigationList $align={ALIGN.center} />
   </HeaderNavigation>
 
-export LeftMenu() ->
-  [css, theme] = useStyletron()
-  navigate = useNavigate()
-  location = useLocation()
+export LeftNav() ->
   items=[
     {
       title: <IconTitle Icon={CalendarIcon} label={'Calendar'} />,
@@ -97,7 +75,7 @@ export LeftMenu() ->
       subNav: [
         {
           title: <PlainTitle label="Social Media Accounts" />
-          itemId: "/settings/accounts"
+          itemId: "/settings/socialaccounts"
         }
         {
           title: <PlainTitle label="Calendars" />
@@ -114,40 +92,18 @@ export LeftMenu() ->
       itemId: "/dev"
     }
   ]
+  <ThemedNavigation prefix="main" items={items} />
+
+export LeftMenu({hideLogo}) ->
+  [css, theme] = useStyletron()
 
   <StickyTopAndBottom>
-    <LogoNavbar />
+    { if not hideLogo: <LogoNavbar /> }
     <div style={{height: '100%'}}>
       <VerticalScrollArea style={{
         borderRight: toBorderString(theme.borders.border600)
       }}>
-        <Navigation
-          overrides={{
-            NavItem: {
-              style: ({$active, $theme}) ->
-                {
-                  paddingTop: 0
-                  paddingBottom: 0
-                  ':hover': {
-                    color: $theme.colors.accent
-                  }
-                  ...if $active: {
-                    backgroundColor: $theme.colors.accent
-                    borderLeftColor: $theme.colors.accent
-                  }
-                }
-            }
-          }}
-          items={items}
-          onChange={({event, item}) ->
-            event.preventDefault()
-            navigate(`/main${item.itemId}`)
-          }
-          activePredicate={(item) ->
-            location.pathname.includes('main' + item.itemId)
-          }
-
-        />
+        <LeftNav />
       </VerticalScrollArea>
     </div>
     <SessionMenu />

@@ -1,0 +1,33 @@
+import React from 'react'
+
+import { useStyletron } from 'baseui'
+import { Block } from 'baseui/block'
+
+import ChevronRight from 'baseui/icon/chevron-right'
+
+LargeLabel(props) ->
+    <Block
+      data-baseweb="typo-labellarge"
+      {...props}
+      font={props.font || 'LabelLarge'}
+    />
+
+export IconTitle({Icon, label}) ->
+  [css, theme] = useStyletron()
+  <div style={{paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
+
+    <Icon size={24} color={theme.colors.secondary} style={{marginRight: 8}} />
+    <LargeLabel>{ label }</LargeLabel>
+  </div>
+
+export PlainTitle({label}) ->
+  <div style={{paddingTop: 8, paddingBottom: 8, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
+    {label}
+  </div>
+
+export SubmenuTitle({label}) ->
+  <div style={{paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'row', alignItems: 'center', overflow: 'hidden'}}>
+    {label}
+    <div style={{flexGrow: 1}} />
+    <ChevronRight size={24} />
+  </div>

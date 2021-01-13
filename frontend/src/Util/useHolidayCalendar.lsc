@@ -1,0 +1,10 @@
+import { calendar } from '../holidays_us_en.ics.js'
+import { ICal } from './ICal'
+
+export holidayCalendar = new ICal()
+holidayCalendar.loadICal(calendar)
+
+export useHolidayCalendar(mom) ->
+  key = mom.format('YYYY-MM-DD')
+  events = holidayCalendar.getEvents(key)
+  events

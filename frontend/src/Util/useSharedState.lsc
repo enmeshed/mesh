@@ -1,0 +1,49 @@
+import { useState, useEffect, useRef } from 'react'
+
+handleTag = Symbol.for("react.sharedState.handle.tag")
+
+isStateHandle(x) ->
+  (typeof(x) == 'object') and x and x[handleTag]
+
+removeShare(handle, setter): void ->
+  shares = handle.shares
+  idx = shares.indexOf(setter)
+  if idx > -1: shares.splice(idx, 1)
+
+export makeSharedStateHandle(initialState) ->
+  handle = {
+    [handleTag]: true
+    value: initialState
+    shares: []
+    setState(nextState): void ->
+      for elem share in handle.shares: share(nextState)
+  }
+
+  handle
+
+// Create a state that can be shared between multiple React components.
+export useSharedState(initialStateOrHandle) ->
+  let handleRef = useRef(null)
+
+  // Create handle if it doesn't exist
+  if not handleRef.current:
+    handleRef.current = if isStateHandle(initialStateOrHandle):
+      initialStateOrHandle
+    else:
+      makeSharedStateHandle(initialStateOrHandle)
+
+  handle = handleRef.current
+
+  // Local copy of the shared state
+  [value, setState] = useState(handle.value)
+
+  // Effect to sub/unsub from the shared state
+  useEffect(
+    ->
+      handle.shares.push(setState)
+      -> removeShare(handle, setState)
+    []
+  )
+
+  // Return control vector for shared state
+  [value, handle.setState, handle]
