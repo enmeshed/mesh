@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { AppState } from '../Data/AppState'
+import { AppState } from 'App/Data/AppState'
+import { useIsMobile } from 'App/Layout'
 
 export useTopBarWidget(generator, watches = []) ->
   useEffect(
@@ -17,4 +18,16 @@ export useBackButton(dest, watches = []) ->
       AppState.uxState.setMobileBackButton(data)
       return -> AppState.uxState.clearMobileBackButton(data)
     [dest].concat(watches)
+  )
+
+export useExtraMenu(generator, watches=[], force = false) ->
+  isMobile = useIsMobile() or force
+
+  useEffect(
+    ->
+      if isMobile:
+        widget = generator(watches)
+        AppState.uxState.setTopBarExtra(widget)
+        return -> AppState.uxState.clearTopBarExtra(widget)
+    [isMobile].concat(watches)
   )

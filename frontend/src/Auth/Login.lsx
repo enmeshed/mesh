@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from '@reach/router'
 
 
 import { useStyletron } from 'baseui'
@@ -28,7 +29,6 @@ EmailForm({state}) ->
     </HCentered>
   <form onSubmit={e ->
     e.preventDefault()
-    console.log(`login for ${state.email}`)
     state.setState(Object.assign({}, state, { step: "password" }))
   }>
     <FormControl error={state.emailError}>
@@ -56,6 +56,8 @@ EmailForm({state}) ->
   </React.Fragment>
 
 PasswordForm({state}) ->
+  navigate = useNavigate()
+
   <React.Fragment>
     <HCentered>
       <ParagraphMedium>
@@ -64,8 +66,8 @@ PasswordForm({state}) ->
     </HCentered>
   <form onSubmit={e ->
     e.preventDefault()
-    console.log(`password entered`)
-    state.setState(Object.assign({}, state, { passwordError: "invalid email" }))
+    console.log(`login ${state.email}/${state.password}`)
+    navigate('/main')
   }>
     <FormControl error={state.passwordError}>
       <Input
@@ -106,9 +108,6 @@ LoginCard({state}) ->
     <CardBody>
       <LoginForm state={state} />
     </CardBody>
-    <CardAction>
-
-    </CardAction>
   </Card>
 
 export LoginScreen() ->

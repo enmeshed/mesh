@@ -77,7 +77,7 @@ scrollAreaStyle = {
   boxSizing: 'border-box'
 }
 export VerticalScrollArea({children, style, ...restProps}) ->
-  now style = if style: Object.assign({}, style, scrollAreaStyle) else: style
+  now style = if style: Object.assign({}, style, scrollAreaStyle) else: scrollAreaStyle
   <div style={style} {...restProps}>
     {children}
   </div>

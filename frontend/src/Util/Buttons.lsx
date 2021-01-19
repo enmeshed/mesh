@@ -1,0 +1,37 @@
+import React from 'react'
+
+import { useStyletron } from 'baseui'
+
+import { useIsMobile } from 'App/Layout'
+
+import { Button } from 'baseui/button'
+
+export getImageButtonSizing(theme) ->
+  hSpacing = theme.sizing.scale500
+  vSpacing = theme.sizing.scale500
+  iconSize = theme.sizing.scale800
+  {
+    hSpacing
+    vSpacing
+    iconSize
+    padding: {
+      paddingLeft: hSpacing
+      paddingRight: hSpacing
+      paddingTop: vSpacing
+      paddingBottom: vSpacing
+    }
+  }
+
+export ResponsiveIconButton({Icon, label, ...restProps}) ->
+  [ css, theme ] = useStyletron()
+  isMobile = useIsMobile()
+
+  { iconSize, padding } = getImageButtonSizing(theme)
+
+  mergedStyle = Object.assign({}, padding, restProps.style)
+  <Button {...restProps} style={mergedStyle}>
+    <Icon size={iconSize} style={{
+      ...if not isMobile: { marginRight: theme.sizing.scale300 }
+    }} />
+    { if not isMobile: label }
+  </Button>

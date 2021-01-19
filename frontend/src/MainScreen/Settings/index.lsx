@@ -1,20 +1,21 @@
 import React from 'react'
 import { Router, Redirect } from '@reach/router'
 
-import { toBorderString } from '../util'
-import { useTopBarWidget, useBackButton } from '../Util/useTopBarWidget'
+import { toBorderString } from 'App/util'
+import { useTopBarWidget, useBackButton } from 'App/Util/useTopBarWidget'
 
 import { useStyletron } from 'baseui'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 
-import { LeftDrawer, StickyTop, VerticalScrollArea, useIsMobile } from '../Layout'
-import { MenuToggleNavbar } from '../Navbar'
-import { SubmenuTitle } from '../Util/Labels'
-import { ThemedNavigation, Link } from '../Util/ThemedNavigation'
-import { NotFound } from '../NotFound'
-import { Disabled } from '../Disabled'
+import { LeftDrawer, StickyTop, VerticalScrollArea, useIsMobile } from 'App/Layout'
+import { MenuToggleNavbar } from 'App/Navbar'
+import { SubmenuTitle } from 'App/Util/Labels'
+import { ThemedNavigation, Link } from 'App/Util/ThemedNavigation'
+import { NotFound } from 'App/NotFound'
+import { Disabled } from 'App/Disabled'
+import { CalendarSettings } from './Calendars'
 
-import CalendarIcon from '../Icons/calendar'
+import CalendarIcon from 'App/Icons/calendar'
 
 settingsMap = {
   settings: {
@@ -34,7 +35,8 @@ settingsMap = {
   }
   calendars: {
     name: "Calendars"
-    Component: Disabled
+    Component: CalendarSettings
+    noBreadcrumbs: true
     path: ['calendars']
   }
   billing: {
@@ -54,26 +56,28 @@ settingsMap = {
   }
 }
 
-useBreadcrumbs(id) ->
-  settingsData = settingsMap[id]
+breadcrumbsFor(path) ->
+  <Breadcrumbs>
+    <Link to="/main/settings">Settings</Link>
+    {...for idx i, elem p in path:
+      breadcrumbData = settingsMap[p]
+      dest = `/main/settings/${breadcrumbData.path.join('/')}`
+      <Link key={i} to={dest}>{breadcrumbData.name}</Link>
+    }
+  </Breadcrumbs>
 
+useBreadcrumbs({path}) ->
   useTopBarWidget(->
-    <Breadcrumbs>
-      <Link to="/main/settings">Settings</Link>
-      {...for elem p in settingsData.path:
-        breadcrumbData = settingsMap[p]
-        dest = `/main/settings/${breadcrumbData.path.join('/')}`
-        <Link key={id} to={dest}>{breadcrumbData.name}</Link>
-      }
-    </Breadcrumbs>
+    breadcrumbsFor(path)
   )
 
-  if settingsData.path.length == 1:
+  if path.length == 1:
     useBackButton(-1)
 
 RouterEntry({id}) ->
-  { Component, path } = settingsMap[id]
-  useBreadcrumbs(id)
+  settingsData = settingsMap[id]
+  { Component, path, noBreadcrumbs } = settingsData
+  if not noBreadcrumbs: useBreadcrumbs(settingsData)
   <Component path={path[path.length - 1]} id={id} />
 
 SettingsRoot() ->
@@ -87,7 +91,7 @@ SettingsRoot() ->
 SettingsRouter() ->
   <Router primary={false} component={React.Fragment}>
     {...for key k, val { path } in settingsMap:
-      truePath = if path.length == 0: '/' else: path.join('/')
+      truePath = if path.length == 0: '/' else: path.join('/') + "/*"
       <RouterEntry key={k} id={k} path={truePath} />
     }
     <NotFound default />
@@ -102,7 +106,7 @@ SettingsMenuItems() ->
           itemId: `/${path[0]}`
         }]
   ]
-  <ThemedNavigation prefix="main/settings" items={items} />
+  <ThemedNavigation dividers prefix="main/settings" items={items} />
 
 SettingsMenu() ->
   [css, theme] = useStyletron()

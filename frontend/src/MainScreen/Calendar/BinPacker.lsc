@@ -1,0 +1,47 @@
+// Bin-packing algorithm for day-view calendar.
+export class BinPacker:
+  // Default number of slots that one event will span.
+  defaultSpan = 3
+
+  // Initial empty bins
+  slots = [[]]
+  columns = [[]]
+
+  constructor(start, end, step) ->
+    this.start = start
+    this.end = end
+    this.step = step
+
+  getColumns() -> this.columns
+
+  // Try to fit a single event of the given span at the given slot in the
+  // given column. Returns true on success.
+  packOneEventIntoSlots(slots, slot, span) ->
+    for let i=slot; i<slot+span; i++:
+      if slots[i]: return false
+    for let i=slot; i<slot+span; i++: slots[i] = true
+    return true
+
+  packOneEvent(slot, span) ->
+    // Fit into earliest possible existing column
+    for idx i, elem slots in this.slots:
+      if this.packOneEventIntoSlots(slots, slot, span): return i
+    // Add new column
+    newSlots = []
+    this.slots.push(newSlots)
+    this.columns.push([])
+    this.packOneEventIntoSlots(newSlots, slot, span)
+    return this.columns.length - 1
+
+  packSortedEvents(events, momentGetter): void ->
+    { start, step } = this
+
+    for elem ev in events:
+      mom = momentGetter(ev)
+      dt = mom.diff(start, 'minutes')
+      slot = Math.floor(dt / step)
+      span = (ev.span or this.defaultSpan)
+      colIndex = this.packOneEvent(slot, span)
+      this.columns[colIndex].push({
+        slot, span, event: ev, date: mom
+      })

@@ -1,0 +1,38 @@
+import React, { useState } from 'react'
+import { Select } from "baseui/select"
+import { useNavigate } from '@reach/router'
+
+import { useCalendars } from 'App/Data/useCalendars'
+
+export CalendarSelect({allowManage}) ->
+  [ calendarData ] = useCalendars()
+  calendarOpts = [
+    ...for elem cal in calendarData:[
+      { label: cal.name, id: cal.id }
+    ]
+    ...if allowManage: [{ label: 'Manage Calendars...', id: '0', manage: true }]
+  ]
+  [ calOpt, setCalOpt ] = useState([ calendarOpts[0] ])
+  navigate = useNavigate()
+
+  setCalendar(value) ->
+    if value?[0]?.manage:
+      navigate('/main/settings/calendars')
+    else:
+      setCalOpt(value)
+
+  <Select
+    overrides={{
+      Root: {
+        style: {
+          maxWidth: '250px'
+        }
+      }
+    }}
+    searchable={false}
+    clearable={false}
+    required
+    options={ calendarOpts }
+    value={ calOpt }
+    onChange={ ({value}) -> setCalendar(value) }
+  />

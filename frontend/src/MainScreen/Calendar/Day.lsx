@@ -1,0 +1,294 @@
+import React, { useMemo, useState } from 'react'
+import { useNavigate } from '@reach/router'
+import { useStyletron } from 'baseui'
+
+import { toBorderString } from '../../util'
+import { momentForZone } from '../../Util/momentForZone'
+import { useTopBarWidget, useExtraMenu } from '../../Util/useTopBarWidget'
+import { useIsMobile, StickyTop, VerticalScrollArea } from '../../Layout'
+import { useDayEvents } from './CalendarData'
+import { BinPacker } from './BinPacker'
+
+import { Label1, Label2, Label3, Label4, Paragraph3, Paragraph2 } from 'baseui/typography'
+import { Button } from 'baseui/button'
+import { ButtonGroup } from 'baseui/button-group'
+import { StatefulPopover } from 'baseui/popover'
+import { Block } from 'baseui/block'
+import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
+
+import { CalendarSelect } from './CalendarSelect'
+import { getImageButtonSizing, ResponsiveIconButton } from 'App/Util/Buttons'
+
+import ChevronLeft from "baseui/icon/chevron-left"
+import ChevronRight from "baseui/icon/chevron-right"
+import Overflow from 'baseui/icon/overflow'
+import PostIcon from '../../Icons/post'
+import CalendarIcon from '../../Icons/calendar'
+
+{ moment } = require('globalthis')()
+
+// Day view grid
+GutterEntry({small, date}) ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+
+  [height, width, formattedDate] = if small:
+    ['50px', '70px', date.format("h A")]
+  else:
+    ['50px', '70px', date.format("h A")]
+
+  onClick(ev) ->
+    ev.preventDefault()
+    navigate("/main/post")
+
+  <div className={css({
+    position: 'relative'
+    display: 'flex'
+    flexDirection: 'column'
+    height
+    width
+    borderBottom: toBorderString(theme.borders.border600)
+    boxSizing: 'border-box'
+  })}>
+    <div className={css({flex: "1 0 50%"})} onClick={onClick} />
+    <div className={css({flex: "1 0 50%"})} onClick={onClick} />
+    <div className={css({
+      position: 'absolute'
+      height
+      width
+      top: 0
+      left: 0
+      pointerEvents: 'none'
+      display: 'flex'
+      justifyContent: 'flex-end'
+      borderRight: toBorderString(theme.borders.border600)
+      paddingRight: theme.sizing.scale300
+      boxSizing: 'border-box'
+    })}>
+      <Label1>{formattedDate}</Label1>
+    </div>
+  </div>
+
+BlankEntry({small, date}) ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+  height = '50px'
+
+  onClick(ev) ->
+    ev.preventDefault()
+    navigate("/main/post")
+
+  <div className={css({
+    display: 'flex'
+    flexDirection: 'column'
+    height
+    borderBottom: toBorderString(theme.borders.border600)
+    boxSizing: 'border-box'
+  })}>
+    <div className={css({
+      flex: "1 0 50%"
+      boxSizing: 'border-box'
+      borderBottom: 'dotted 1px rgba(0,0,0,0.15)'
+    })} onClick={onClick} />
+    <div className={css({flex: "1 0 50%"})} onClick={onClick} />
+  </div>
+
+Column({start, end, step, Entry, Event, events, flex}) ->
+  [ css ] = useStyletron()
+  <div className={css({
+    display: 'flex'
+    flexDirection: 'column'
+    ...if flex: { flex: 1 }
+  })}>
+    <div style={{position: 'relative'}}>
+      {...for idx i, elem ev in (events or []):
+        <Event key={i} event={ev} />
+      }
+    </div>
+    {...for let d = moment(start), i=0; d < end; (d.add(step, 'minutes'), i++):
+      <Entry key={i} date={moment(d)} />
+    }
+  </div>
+
+Grid({start, end, small, columns}) ->
+  [ css ] = useStyletron()
+  <div className={css({
+    display: 'flex'
+    flexDirection: 'row'
+  })}>
+    <Column start={start} end={end} step={60} Entry={GutterEntry} small={small} />
+    {...for idx i, elem col in columns:
+      <Column key={i} start={start} end={end} step={60} Entry={BlankEntry} small={small} flex events={col} Event={EventBubble} />
+    }
+  </div>
+
+EventBubble({event}) ->
+  [ css, theme ] = useStyletron()
+  { event: post } = event
+  <div style={{
+    position: 'absolute'
+    top: event.slot * 25
+    height: event.span * 25
+    width: '100%'
+    overflow: 'hidden'
+    borderRadius: '6px'
+    padding: '8px'
+    boxSizing: 'border-box'
+    backgroundColor: theme.colors.backgroundSecondary
+    display: 'flex'
+    flexDirection: 'column'
+  }}>
+    <div>
+      <Label2 as="span">Post</Label2>&nbsp;
+      <Paragraph2 as="span">to {post.targets[0].accountName}:</Paragraph2>
+    </div>
+    <Paragraph3 as="span">{post.content}</Paragraph3>
+  </div>
+
+// Day view header
+Header({date, events}) ->
+  [ css, theme ] = useStyletron()
+
+  headerEvents = (events or []).filter(x -> (not x.post))
+
+  <div className={css({
+    display: 'flex'
+    flexDirection: 'column'
+    boxSizing: 'border-box'
+    alignItems: 'center'
+    borderBottom: toBorderString(theme.borders.border600)
+  })}>
+    <div className={css({
+      marginTop: '8px'
+      marginBottom: '8px'
+    })}>
+      <Label1>{ date.format('ddd MMM D' )}</Label1>
+    </div>
+    {...for idx i, elem e in headerEvents:
+      <HeaderEvent key={i} event={e} />
+    }
+  </div>
+
+HeaderEvent({event}) ->
+  [ css ] = useStyletron()
+  backgroundColor = if event.warning: "warning" else: "backgroundTertiary"
+  <Block
+    marginBottom="scale300"
+    backgroundColor={backgroundColor}
+    maxWidth="95%"
+    width="95%"
+    paddingLeft="scale200"
+    paddingTop="scale200"
+    paddingRight="scale200"
+    paddingBottom="scale200"
+    className={css({
+      boxSizing: 'border-box'
+      overflow: 'hidden'
+      textOverflow: 'ellipsis'
+      borderRadius: '6px'
+    })}
+  >
+    <Label3>{event.summary}</Label3>
+    {
+      if event.detail:
+        <Paragraph3>{event.detail}</Paragraph3>
+    }
+  </Block>
+
+
+// Primary dayview component
+export Day({year, month, day}) ->
+  [ css ] = useStyletron()
+  small = useIsMobile()
+
+  yearNumber = +year
+  monthNumber = (+month)-1
+  dayNumber = +day
+  zone = null
+
+  date = momentForZone(zone).year(yearNumber).month(monthNumber).date(dayNumber)
+  start = moment(date).startOf('day')
+  end = moment(date).endOf('day')
+
+  useTopBarWidget(-> <DayNavbarWidget day={date} zone={zone} />, [ yearNumber, monthNumber, dayNumber, zone ])
+  useExtraMenu(-> <MobileExtraPopupContent />)
+
+  // Event processing (TODO: make this sane)
+  events = useDayEvents(date)
+  posts = events.filter(x -> x.post)
+  posts.sort((a,b) -> a.scheduledAt.valueOf() - b.scheduledAt.valueOf())
+  packer = new BinPacker(start, end, 30)
+  packer.packSortedEvents(posts, (post) -> momentForZone(zone, post.scheduledAt))
+
+  <StickyTop>
+    <Header date={date} events={events} />
+    <VerticalScrollArea style={{display: 'flex', flexDirection: 'column'}}>
+      <Grid start={start} end={end} small={small} columns={packer.getColumns()} />
+    </VerticalScrollArea>
+  </StickyTop>
+
+// Top bar widget to move between months/calendars
+DayNavbarWidget({day, zone}) ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+  isMobile = useIsMobile()
+  Label = if isMobile: Label2 else: Label1
+  { hSpacing, vSpacing, iconSize, padding: imageButtonPadding } = getImageButtonSizing(theme)
+
+  prevMo = moment(day).subtract(1, 'days')
+  nextMo = moment(day).add(1, 'days')
+  thisMo = momentForZone(zone)
+
+  makeLink(mo) ->
+    (ev): void ->
+      ev.preventDefault()
+      navigate(`/main/calendar/${mo.format('YYYY')}/${mo.format('MM')}/${mo.format('DD')}`)
+
+  toPrev = makeLink(prevMo)
+  toNext = makeLink(nextMo)
+  toNow = makeLink(thisMo)
+  toMonth(ev): void ->
+    ev.preventDefault()
+    navigate(`/main/calendar/${thisMo.format('YYYY')}/${thisMo.format('MM')}`)
+
+  toPost(ev): void ->
+    ev.preventDefault()
+    navigate(`/main/post`)
+
+  <div className={css({
+    display: 'flex'
+    alignItems: 'center'
+  })}>
+    <ButtonGroup>
+      <Button onClick={toMonth} style={imageButtonPadding}>
+        <CalendarIcon size={iconSize} title="Month" />
+      </Button>
+      <Button onClick={toNow}>
+        Today
+      </Button>
+      <Button onClick={toPrev} style={imageButtonPadding}>
+        <ChevronLeft size={iconSize} />
+      </Button>
+      <Button onClick={toNext} style={imageButtonPadding}>
+        <ChevronRight size={iconSize} />
+      </Button>
+    </ButtonGroup>
+    <div className={css({flex: 1})} />
+    { if not isMobile:
+      <ResponsiveIconButton
+        onClick={toPost}
+        style={{marginRight: theme.sizing.scale600}}
+        Icon={PostIcon}
+        label={"Post"}
+      />
+    }
+    { if not isMobile:
+      <CalendarSelect allowManage />
+    }
+  </div>
+
+MobileExtraPopupContent() ->
+  [css, theme] = useStyletron()
+  <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
+    <CalendarSelect allowManage />
+  </Block>

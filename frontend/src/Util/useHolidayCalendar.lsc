@@ -4,7 +4,6 @@ import { ICal } from './ICal'
 export holidayCalendar = new ICal()
 holidayCalendar.loadICal(calendar)
 
-export useHolidayCalendar(mom) ->
-  key = mom.format('YYYY-MM-DD')
-  events = holidayCalendar.getEvents(key)
+export useHolidayCalendar(ymd) ->
+  events = holidayCalendar.getEvents(ymd)
   events

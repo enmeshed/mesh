@@ -1,0 +1,14 @@
+import React from 'react'
+import { Router, Redirect } from '@reach/router'
+
+import { NotFound } from '../../NotFound'
+import { Disabled } from '../../Disabled'
+
+import { Content } from './Content'
+
+export ContentRouter() ->
+  <Router primary={false} component={React.Fragment}>
+    <Content path="primary/*" />
+    <Redirect noThrow from="/" to="primary" />
+    <NotFound default />
+  </Router>

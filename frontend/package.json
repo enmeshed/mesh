@@ -15,7 +15,8 @@
     "@ormojo/ephraim": "^1.0.0",
     "@ormojo/fobs": "^1.0.8",
     "globalthis": "^1.0.1",
-    "ical.js": "^1.4.0"
+    "ical.js": "^1.4.0",
+    "escape-string-regexp": "^4.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.1.2",

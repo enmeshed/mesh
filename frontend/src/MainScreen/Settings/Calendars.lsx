@@ -1,0 +1,29 @@
+import React from 'react'
+import { Router, Redirect } from '@reach/router'
+
+import { useCalendars } from 'App/Data/useCalendars'
+
+import { ThemedNavigation, Link } from 'App/Util/ThemedNavigation'
+import { SubmenuTitle } from 'App/Util/Labels'
+
+export CalendarSettings() ->
+  <Router primary={false} component={React.Fragment}>
+    <EditCalendar path=":id" />
+    <CalendarList default />
+  </Router>
+
+export CalendarList() ->
+  [calendars, loading] = useCalendars()
+  items = [
+    ...for elem { id, name } in calendars:
+      [{
+        title: <SubmenuTitle label={name} />
+        itemId: `/${id}`
+      }]
+  ]
+  <ThemedNavigation dividers prefix="main/settings/calendars" items={items} />
+
+export EditCalendar({id}) ->
+  <div>
+    Edit calendar {id}
+  </div>

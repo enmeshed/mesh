@@ -23,5 +23,14 @@ import { entity, field, types, Entity } from '@ormojo/ephraim'
     if this.useMobileBackButton == data:
       this.useMobileBackButton = null
 
+  // IF this value is set to a React element, an extra "..." control will
+  // be displayed on the right side of the topbar, and the given element
+  // will be shown as a popover.
+  @field(types.any) topBarExtra = null
+  setTopBarExtra(widget): void -> this.topBarExtra = widget
+  clearTopBarExtra(widget): void ->
+    if this.topBarExtra == widget:
+      this.topBarExtra = null
+
 
 export { UxState }

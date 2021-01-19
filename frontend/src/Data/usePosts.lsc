@@ -1,0 +1,46 @@
+mocks =  [
+    {
+      id: "post_1"
+      day: "2021-01-20"
+      timeOfDay: "17:00"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Test post Jan 20 5pm"
+    }
+    {
+      id: "post_2"
+      day: "2021-01-15"
+      timeOfDay: "09:30"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "John 3:16"
+    }
+    {
+      id: "post_3"
+      day: "2021-01-16"
+      timeOfDay: "12:30"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Welcome to SimpliBuzz 2.0"
+    }
+    {
+      id: "post_4"
+      day: "2021-01-16"
+      timeOfDay: "17:00"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Test post Jan 16"
+    }
+  ]
+
+// Returns [ posts, loading, error ]
+export usePosts() ->
+  [ mocks, false, null ]

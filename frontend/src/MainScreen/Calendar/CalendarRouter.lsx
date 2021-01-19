@@ -4,6 +4,7 @@ import { Router, Redirect } from '@reach/router'
 import { NotFound } from '../../NotFound'
 import { Disabled } from '../../Disabled'
 import { Month } from './Month'
+import { Day } from './Day'
 
 { moment } = require('globalthis')()
 
@@ -11,6 +12,7 @@ export CalendarRouter() ->
   t0 = moment()
 
   <Router primary={false} component={React.Fragment}>
+    <Day path="/:year/:month/:day" />
     <Month path="/:year/:month" />
     <Redirect noThrow from="/" to={`${t0.format('YYYY')}/${t0.format('MM')}`} />
     <NotFound default />

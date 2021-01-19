@@ -1,0 +1,10 @@
+mocks = [
+  {
+    id: "cal_1"
+    name: "Your Calendar"
+  }
+]
+
+// [ data, loading, errors ]
+export useCalendars() ->
+  [ mocks, false, false ]

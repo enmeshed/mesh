@@ -1,0 +1,145 @@
+import React from 'react'
+import { useStyletron } from 'baseui'
+
+import { Card, StyledBody } from 'baseui/card'
+import { Block } from 'baseui/block'
+import { FormControl } from 'baseui/form-control'
+import { DatePicker } from 'baseui/datepicker'
+import { TimePicker } from 'baseui/timepicker'
+import { TimezonePicker } from 'baseui/timezonepicker'
+import { Select } from 'baseui/select'
+import { Textarea } from "baseui/textarea"
+import { FileUploader } from "baseui/file-uploader"
+import { Button } from 'baseui/button'
+
+import { VerticalScrollArea } from '../Layout'
+
+{ moment } = require('globalthis')()
+
+// Post form
+FormHeading(props) ->
+  <Block as="h3" color="contentPrimary" font="font550" marginBottom="8px" {...props} />
+
+formControlOverrides = {
+  ControlContainer: {
+    style: {
+      marginRight: '5px'
+    }
+  }
+}
+
+FormSection({title, children, ...restProps}) ->
+    <Card
+      overrides={{
+        Root: {
+          style: {
+            width: '95vw'
+            maxWidth: '650px'
+            borderBottomWidth: 0
+            borderTopWidth: 0
+            borderLeftWidth: 0
+            borderRightWidth: 0
+          }
+        }
+        Contents: {
+          style: {
+            marginBottom: 0
+            marginLeft: 0
+            marginRight: 0
+            marginTop: 0
+          }
+        }
+      }}
+    >
+      <FormHeading>{title}</FormHeading>
+      {children}
+    </Card>
+
+FormControlGroup({children}) ->
+  childs = React.Children.toArray(children)
+
+  <div style={{display: 'flex'}}>
+    {...for idx i, elem child in childs:
+      lastChild = (i == childs.length - 1)
+      <div key={i} style={{flex: 1, ...if not lastChild: {marginRight: '5px'}}}>
+        {child}
+      </div>
+    }
+  </div>
+
+PostForm() ->
+  [ css, theme ] = useStyletron()
+  [ date, setDate ] = React.useState([new Date()])
+  [ time, setTime ] = React.useState(new Date())
+  [ zone, setZone ] = React.useState(moment.tz.guess())
+  [ text, setText ] = React.useState('')
+
+  validTargets = [
+    { label: 'Twitter: @SimplibuzzTech', id: 1 }
+    { label: 'Facebook Page: Simplibuzz Tech', id: 2 }
+  ]
+  [ targets, setTargets ] = React.useState([ ])
+
+  <div style={{maxWidth: '650px'}}>
+    <FormSection title="Schedule">
+      <FormControlGroup>
+          <FormControl label="Date">
+            <DatePicker
+              value={date}
+              onChange={ ({date}) -> setDate(if Array.isArray(date): date else: [date])}
+            />
+          </FormControl>
+          <FormControl label="Time">
+            <TimePicker
+              creatable
+              value={time}
+              onChange={ (time) -> setTime(time)}
+            />
+          </FormControl>
+      </FormControlGroup>
+      <FormControl label="Timezone" overrides={formControlOverrides}>
+        <TimezonePicker
+          value={zone}
+          onChange={ (zone) ->
+            setZone(zone.id) }
+        />
+      </FormControl>
+    </FormSection>
+
+    <FormSection title="Targets">
+      <FormControl label="Post To">
+        <Select
+          placeholder="Choose target accounts..."
+          options={validTargets}
+          value={targets}
+          multi
+          onChange={ (params) -> setTargets(params.value) }
+          clearable searchable
+        />
+      </FormControl>
+    </FormSection>
+
+    <FormSection title="Content">
+      <FormControl label="Text">
+        <Textarea
+          value={text}
+          onChange={(ev) -> setText(ev.target.value)}
+          placeholder="Enter the text to post..."
+        />
+      </FormControl>
+      <FormControl label="Image">
+        <FileUploader />
+      </FormControl>
+    </FormSection>
+
+    <div style={{display: 'flex'}}>
+      <Button style={{marginRight: '5px'}}>Post</Button>
+      <Button>Save Draft</Button>
+    </div>
+  </div>
+
+// Post screen
+export Post() ->
+  <VerticalScrollArea style={{paddingLeft: '4px', paddingRight: '4px', paddingTop: '4px', paddingBottom: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+    <PostForm />
+  </VerticalScrollArea>

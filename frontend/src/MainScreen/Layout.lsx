@@ -33,7 +33,13 @@ export MobileLayout() ->
             marginLeft: 0
             marginRight: 0
             marginBottom: 0
+            marginTop: 0
             width: "300px"
+          }
+        }
+        Close: {
+          style: {
+            display: "none"
           }
         }
       }}

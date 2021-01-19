@@ -1,0 +1,114 @@
+import React, { useState } from 'react'
+import { useStyletron } from 'baseui'
+
+import { useSharedState } from 'App/Util/useSharedState'
+import { useTopBarWidget } from 'App/Util/useTopBarWidget'
+import { useContent } from 'App/Data/useContent'
+
+import { Input } from 'baseui/input'
+import {
+  Card
+  StyledBody as CardBody
+  StyledAction as CardAction
+  StyledThumbnail as CardThumbnail
+} from 'baseui/card'
+
+import { VerticalScrollArea, useIsMobile } from 'App/Layout'
+import { ResponsiveIconButton } from 'App/Util/Buttons'
+
+import SearchIcon from 'baseui/icon/search'
+import PlusIcon from 'baseui/icon/plus'
+
+export Content() ->
+  // Search state is shared with the nav bar component which we inject elsewhere
+  [ search, setSearch, searchHandle ] = useSharedState('')
+  [ content, loading ] = useContent(search)
+  isMobile = useIsMobile()
+  flex = if isMobile: '1 1 100%' else: '1 1 33%'
+  maxWidth = if isMobile: '100%' else: '33%'
+
+  useTopBarWidget(-> <ContentNavbarWidget searchHandle={searchHandle} />)
+
+  <VerticalScrollArea>
+    <div style={{
+      display: 'flex'
+      flexWrap: 'wrap'
+    }}>
+      {...for idx i, elem c in content:
+        <div key={i} style={{ flex, maxWidth, padding: '8px', boxSizing: 'border-box' }}>
+          <Card key={i} overrides={{
+            Root: {
+              style: {
+                boxSizing: 'border-box'
+                paddingLeft: '16px'
+                paddingRight: '16px'
+                paddingTop: '16px'
+                paddingBottom: '16px'
+              }
+            }
+            Contents: {
+              style: {
+                boxSizing: 'border-box'
+                marginLeft: 0
+                marginRight: 0
+                marginTop: 0
+                marginBottom: 0
+              }
+            }
+            Body: {
+              style: {
+                height: '96px'
+                marginBottom: 0
+                overflow: 'hidden'
+                textOverflow: 'ellipsis'
+                "-webkit-line-clamp": 4
+                "-webkit-box-orient": "vertical"
+                display: "-webkit-box"
+              }
+            }
+          }}>
+            { if c.media?[0]:
+              <CardThumbnail
+                src={c.media[0].thumbUrl}
+              />
+            }
+            {c.body}
+          </Card>
+        </div>
+      }
+      <div>search: { search }</div>
+    </div>
+  </VerticalScrollArea>
+
+ContentNavbarWidget({searchHandle}) ->
+  [ css, theme ] = useStyletron()
+  [ search, setSearch ] = useSharedState(searchHandle)
+  [ liveSearch, setLiveSearch ] = useState('')
+
+  <div className={css({
+    display: 'flex'
+    alignItems: 'center'
+  })}>
+    <div style={{marginRight: theme.sizing.scale600, flex: 1}}>
+      <form onSubmit={e ->
+        e.preventDefault()
+        setSearch(liveSearch)
+      }>
+        <Input value={liveSearch} onChange={(ev) ->
+          setLiveSearch(ev.target.value)
+          // propagate clear
+          if not ev.target.value: setSearch(ev.target.value)
+        }
+          clearable
+          placeholder={"Search content..."}
+          startEnhancer={<SearchIcon size="18px" />}
+          overrides={{
+            StartEnhancer: {
+              style: { paddingLeft: '0px', paddingRight: '0px' }
+            }
+          }}
+        />
+      </form>
+    </div>
+    <ResponsiveIconButton Icon={PlusIcon} label="Create" />
+  </div>

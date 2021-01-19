@@ -9,6 +9,8 @@ import {
 } from 'baseui/header-navigation'
 import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
 import ChevronLeft from "baseui/icon/chevron-left"
+import { StatefulPopover } from 'baseui/popover'
+import Overflow from 'baseui/icon/overflow'
 
 import { MenuLogo, WideLogo } from './Logo'
 import { useIsMobile } from './Layout'
@@ -16,33 +18,12 @@ import { AppState } from './Data/AppState'
 import { observeField } from './Data/observeField'
 import { useObservable, useObservableField } from './Data/useObservable'
 
-export TopNavbar({children}) ->
-  <HeaderNavigation overrides={{
-    Root: {
-      style: ({$theme}) -> {
-        paddingRight: $theme.sizing.scale500
-      }
-    }
-  }}>
-    {children}
-  </HeaderNavigation>
-
-export EmptyTopNavbar({height = 48}) ->
-  <TopNavbar>
-    <NavigationList $align={ALIGN.center}>
-      <NavigationItem style={{height}}>
-      </NavigationItem>
-    </NavigationList>
-    <NavigationList $align={ALIGN.right}>
-
-    </NavigationList>
-  </TopNavbar>
-
 export GeneralNavbar({height = 48}) ->
   isMobile = useIsMobile()
   navigate = useNavigate()
   widget = useObservable(-> observeField(AppState.uxState, "injectedTopBarControl"), false)
   backButton = useObservableField(AppState.uxState, "useMobileBackButton")
+  ExtraPopover = useObservableField(AppState.uxState, "topBarExtra")
 
   toggleMenu() ->
     AppState.uxState.isMenuOpen = (not AppState.uxState.isMenuOpen)
@@ -82,11 +63,31 @@ export GeneralNavbar({height = 48}) ->
         if Array.isArray(widget):
           widget
         elif widget:
-          <NavigationItem style={{flex: 1}}>
+          <NavigationItem style={{
+            flex: 1
+            ...if isMobile: { paddingLeft: 12 }
+          }}>
             {widget}
           </NavigationItem>
       }
     </NavigationList>
+    {
+      if ExtraPopover:
+        <NavigationList $align={ALIGN.right}>
+          <StatefulPopover
+            content={-> ExtraPopover }
+            dismissOnEsc={true}
+            dismissOnClickOutside={true}
+            placement="bottomLeft"
+            popperOptions={{modifiers: {flip: {enabled: false}}}}
+            triggerType="click"
+          >
+            <UserButton>
+              <Overflow size={32} />
+            </UserButton>
+          </StatefulPopover>
+        </NavigationList>
+    }
   </HeaderNavigation>
 
 export MenuToggleNavbar = GeneralNavbar

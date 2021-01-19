@@ -2,11 +2,12 @@ import React from 'react'
 import { useNavigate, useLocation } from '@reach/router'
 
 import { AppState } from '../Data/AppState'
+import { toBorderString } from '../util'
 
 import { Navigation } from "baseui/side-navigation"
 import { StyledLink } from 'baseui/link'
 
-export ThemedNavigation({prefix, ...restProps}) ->
+export ThemedNavigation({prefix, dividers, ...restProps}) ->
   navigate = useNavigate()
   location = useLocation()
   <Navigation
@@ -18,6 +19,9 @@ export ThemedNavigation({prefix, ...restProps}) ->
             paddingBottom: 0
             ':hover': {
               color: $theme.colors.accent
+            }
+            ...if dividers: {
+              borderBottom: toBorderString($theme.borders.border200)
             }
             ...if $active: {
               backgroundColor: $theme.colors.accent

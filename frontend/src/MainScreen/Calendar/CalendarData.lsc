@@ -1,6 +1,63 @@
 import { useHolidayCalendar } from '../../Util/useHolidayCalendar'
 
-export useDayEvents(mom) ->
-  holidays = useHolidayCalendar(mom)
+mocks = {
+  "2021-01-20": [
+    {
+      summary: "FB login expires"
+      detail: "Your Facebook login credentials will expire on this day. Please renew them before then to ensure that your Facebook posts go out as scheduled."
+      warning: true
+    }
+    {
+      post: true
+      timeOfDay: "17:00"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Test post Jan 20 5pm"
+    }
+  ]
+  "2021-01-15": [
+    {
+      post: true
+      timeOfDay: "09:30"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "John 3:16"
+    }
+  ]
+  "2021-01-16": [
+    {
+      post: true
+      timeOfDay: "12:30"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Welcome to SimpliBuzz 2.0"
+    }
+    {
+      post: true
+      timeOfDay: "17:00"
+      targets: [{
+        medium: "twitter"
+        accountName: "@SimplibuzzTech"
+      }]
+      content: "Test post Jan 16"
+    }
+  ]
+}
 
-  holidays
+export useDayEvents(mom) ->
+  key = mom.format('YYYY-MM-DD')
+  holidays = useHolidayCalendar(key)
+  mock = mocks[key] or []
+
+  for elem mockery in mock:
+    if mockery.timeOfDay:
+      v = `${key} ${mockery.timeOfDay}`
+      mockery.scheduledAt = moment(v)
+
+  holidays.concat(mock)

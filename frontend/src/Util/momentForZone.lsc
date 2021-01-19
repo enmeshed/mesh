@@ -1,0 +1,10 @@
+globalThis = require('globalthis')()
+
+// moment-timezone is loaded by index.html from CDN
+moment = globalThis.moment
+
+export momentForZone(zone, ...args) ->
+  if zone:
+    moment.tz(...args, zone)
+  else:
+    moment(...args)

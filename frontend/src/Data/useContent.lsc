@@ -1,0 +1,85 @@
+import { useState, useEffect } from 'react'
+escapeStringRegexp = require('escape-string-regexp')
+
+mocks = [
+  {
+    id: "ci_1"
+    libraryId: "library_1"
+    body: "This is some content"
+    media: [
+      {
+        type: 'image'
+        thumbUrl: 'https://source.unsplash.com/user/erondu/300x300'
+      }
+    ]
+  }
+  {
+    id: "ci_2"
+    libraryId: "library_1"
+    body: "Longer content Longer contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger content Longer contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger contentLonger content"
+    media: [
+      {
+        type: 'image'
+        thumbUrl: 'https://source.unsplash.com/user/erondu/300x300'
+      }
+    ]
+  }
+  {
+    id: "ci_3"
+    libraryId: "library_1"
+    body: "Third content"
+    media: [
+      {
+        type: 'image'
+        thumbUrl: 'https://source.unsplash.com/user/erondu/300x300'
+      }
+    ]
+  }
+  {
+    id: "ci_4"
+    libraryId: "library_1"
+    body: "Four"
+    media: [
+      {
+        type: 'image'
+        thumbUrl: 'https://source.unsplash.com/user/erondu/300x300'
+      }
+    ]
+  }
+  {
+    id: "ci_5"
+    libraryId: "library_1"
+    body: "5"
+    media: [
+      {
+        type: 'image'
+        thumbUrl: 'https://source.unsplash.com/user/erondu/300x300'
+      }
+    ]
+  }
+  {
+    id: "ci_5"
+    libraryId: "library_1"
+    body: "Text only and this text should go all the way across the screen without interruption"
+  }
+]
+
+searchMocks(phrase) ->
+  if not phrase: return mocks
+  rexp = new RegExp('.*' + escapeStringRegexp(phrase) + '.*', 'i')
+
+  [...for elem mock in mocks:
+    if mock.body and rexp.test(mock.body): [mock]
+  ]
+
+// [ data, loading, errors ]
+export useContent(search) ->
+  [ results, setResults ] = useState(mocks)
+
+  useEffect(
+    (): void ->
+      setResults(searchMocks(search))
+    [search]
+  )
+
+  [ results, false, false ]

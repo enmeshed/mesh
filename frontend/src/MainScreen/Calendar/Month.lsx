@@ -3,32 +3,25 @@ import { useNavigate } from '@reach/router'
 import { useStyletron } from 'baseui'
 
 import { toBorderString } from '../../util'
-import { useTopBarWidget } from '../../Util/useTopBarWidget'
-import { useSharedState } from '../../Util/useSharedState'
+import { momentForZone } from '../../Util/momentForZone'
+import { useTopBarWidget, useExtraMenu } from '../../Util/useTopBarWidget'
 import { useIsMobile } from '../../Layout'
 import { useDayEvents } from './CalendarData'
 
 import { Label1, Label2, Label4 } from 'baseui/typography'
 import { Button } from 'baseui/button'
 import { ButtonGroup } from 'baseui/button-group'
-import { Select } from "baseui/select"
-import {StatefulPopover} from 'baseui/popover'
 import { Block } from 'baseui/block'
 import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
+
+import { CalendarSelect } from './CalendarSelect'
+
 import ChevronLeft from "baseui/icon/chevron-left"
 import ChevronRight from "baseui/icon/chevron-right"
-import Overflow from 'baseui/icon/overflow'
+import PostIcon from '../../Icons/post'
 
-globalThis = require('globalthis')()
+{ moment } = require('globalthis')()
 
-// moment-timezone is loaded by index.html from CDN
-moment = globalThis.moment
-
-momentForZone(zone, ...args) ->
-  if zone:
-    moment.tz(...args, zone)
-  else:
-    moment(...args)
 
 // Helper for generating a monthview calendar. Creates an array of day objects
 // of the following form:
@@ -159,6 +152,7 @@ Day({day: {date, day, month, epoch}, small}) ->
     onClick={toDay}
   >
     <DayNumber day={day} small={small} isToday={epoch == 'present'} />
+    <PostBlock events={events} small={small} />
     <div className={css({flex: 1})} />
     <EventBlock events={events} small={small} />
   </div>
@@ -177,7 +171,7 @@ DayNumber({day, small, isToday}) ->
       color: "secondaryText"
       backgroundColor: "secondary"
       style: {
-        borderRadius: '1.6em'
+        borderRadius: '50%'
       }
     }
   }
@@ -186,32 +180,84 @@ DayNumber({day, small, isToday}) ->
     <span>{day}</span>
   </Block>
 
+PostBlock({events, small}) ->
+  [ css, theme ] = useStyletron()
+  posts = events.filter(x -> x.post)
+  if posts.length == 0: return null
+
+  if small:
+    <Block display="flex" flexDirection="column" alignItems="center" marginTop="scale400">
+      <PostIcon size={24} color={theme.colors.contentTertiary} />
+      <Label2>
+        { posts.length }
+      </Label2>
+    </Block>
+  else:
+    <Block display="flex" alignItems="center" marginTop="scale800">
+      <PostIcon size={32} color={theme.colors.contentTertiary} />
+      <Label1 style={{marginLeft: theme.sizing.scale300}}>
+        { posts.length }
+      </Label1>
+    </Block>
+
 EventBlock({events, small}) ->
+  if small:
+    let ct = 0
+    <Block display="flex">
+      {...for idx i, elem event in events:
+        if (not event.post) and (ct < 2): // limit to 2 dots
+          now ct = ct + 1
+          <EventDot key={i} event={event} />
+      }
+    </Block>
+  else:
+    <React.Fragment>
+      {...for idx i, elem event in events:
+        if not event.post:
+          <EventEntry key={i} event={event} />
+      }
+    </React.Fragment>
+
+EventEntry({event}) ->
   [ css ] = useStyletron()
-  <React.Fragment>
-    {...for idx i, elem event in events:
-      <Block
-        key={i}
-        marginBottom="scale300"
-        font="LabelSmall"
-        backgroundColor="backgroundTertiary"
-        maxWidth="90%"
-        width="90%"
-        paddingLeft="scale200"
-        paddingRight="scale200"
-        className={css({
-          boxSizing: 'border-box'
-          overflow: 'hidden'
-          whiteSpace: 'nowrap'
-          textOverflow: 'ellipsis'
-          textAlign: 'center'
-          borderRadius: '6px'
-        })}
-      >
-        {event.summary}
-      </Block>
-    }
-  </React.Fragment>
+  backgroundColor = if event.warning: "warning" else: "backgroundTertiary"
+  <Block
+    marginBottom="scale300"
+    font="LabelSmall"
+    backgroundColor={backgroundColor}
+    maxWidth="90%"
+    width="90%"
+    paddingLeft="scale200"
+    paddingRight="scale200"
+    className={css({
+      boxSizing: 'border-box'
+      overflow: 'hidden'
+      whiteSpace: 'nowrap'
+      textOverflow: 'ellipsis'
+      textAlign: 'center'
+      borderRadius: '6px'
+    })}
+  >
+    {event.summary}
+  </Block>
+
+EventDot({event}) ->
+  [ css, theme ] = useStyletron()
+  size = theme.sizing.scale300
+  backgroundColor = if event.warning:
+    theme.colors.warning
+  else:
+    theme.colors.contentTertiary
+  <span className={css({
+    height: size
+    width: size
+    marginLeft: theme.sizing.scale100
+    marginRight: theme.sizing.scale100
+    marginBottom: theme.sizing.scale100
+    backgroundColor
+    borderRadius: "50%"
+    display: "inline-block"
+  })} />
 
 
 // Body of the month view, generating a tile for each day
@@ -250,8 +296,8 @@ export Month({year, month}) ->
 
   dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
 
-  // Install top bar controls to change month
   useTopBarWidget(-> <MonthNavbarWidget dayInMonth={dayInMonth} zone={zone} />, [ yearNumber, monthNumber, zone ])
+  useExtraMenu(-> <MobileExtraPopupContent />)
 
   <div className={css({
     width: '100%'
@@ -309,61 +355,13 @@ MonthNavbarWidget({dayInMonth, zone}) ->
       {dayInMonth.format("MMM YYYY")}
     </Label1>
     <div className={css({flex: 1})} />
-    { if isMobile:
-      <MobileExtraControl />
-    }
     { if not isMobile:
-      <CalendarSelect />
+      <CalendarSelect allowManage />
     }
   </div>
-
-MobileExtraControl(props) ->
-  <StatefulPopover
-    content={-> <MobileExtraPopupContent {...props} /> }
-    dismissOnEsc={true}
-    dismissOnClickOutside={true}
-    placement="bottomLeft"
-    popperOptions={{modifiers: {flip: {enabled: false}}}}
-    triggerType="click"
-  >
-    <UserButton>
-      <Overflow size={32} />
-    </UserButton>
-  </StatefulPopover>
 
 MobileExtraPopupContent() ->
   [css, theme] = useStyletron()
   <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
-    <CalendarSelect />
+    <CalendarSelect allowManage />
   </Block>
-
-// Calendar selector
-CalendarSelect() ->
-  calendars = [
-    { label: 'Your Calendar', id: '31337' }
-    { label: 'Manage Calendars...', id: '0', manage: true }
-  ]
-  [ calOpt, setCalOpt ] = useState([ calendars[0] ])
-  navigate = useNavigate()
-
-  setCalendar(value) ->
-    if value?[0]?.manage:
-      navigate('/main/settings/calendars')
-    else:
-      setCalOpt(value)
-
-  <Select
-    overrides={{
-      Root: {
-        style: {
-          maxWidth: '250px'
-        }
-      }
-    }}
-    searchable={false}
-    clearable={false}
-    required
-    options={ calendars }
-    value={ calOpt }
-    onChange={ ({value}) -> setCalendar(value) }
-  />
