@@ -1,12 +1,14 @@
 import React, { Component } from 'react'
-
 import {Provider as StyletronProvider} from 'styletron-react'
 import {Client as Styletron} from 'styletron-engine-atomic'
 import { useMediaQuery } from 'react-responsive'
-
 import {BaseProvider, createTheme} from 'baseui'
+import { Router, Redirect, LocationProvider} from '@reach/router'
 
-import { Router, Redirect} from '@reach/router'
+import { history } from 'App/Util/createHistory'
+
+import { ToasterContainer } from 'baseui/toast'
+
 import { MainScreen } from './MainScreen'
 import { Auth } from './Auth'
 import { NotFound } from './NotFound'
@@ -46,6 +48,7 @@ theme = createTheme({
     brand6Text: textFor(brand6)
     brand7
     brand7Text: textFor(brand7)
+    toastInfoBackground: "#757575"
   }
   borders: {
     buttonBorderRadius: '6px'
@@ -63,19 +66,23 @@ RootRouter() ->
 
 App() ->
   <React.StrictMode>
-    <StyletronProvider value={engine}>
-      <BaseProvider theme={theme} overrides={{
-        AppContainer: {
-          style: {
-            margin: 0
-            padding: 0
-            height: "100%"
+    <LocationProvider history={history}>
+      <StyletronProvider value={engine}>
+        <BaseProvider theme={theme} overrides={{
+          AppContainer: {
+            style: {
+              margin: 0
+              padding: 0
+              height: "100%"
+            }
           }
-        }
-      }}>
-        <RootRouter />
-      </BaseProvider>
-    </StyletronProvider>
+        }}>
+          <ToasterContainer placement="bottom">
+            <RootRouter />
+          </ToasterContainer>
+        </BaseProvider>
+      </StyletronProvider>
+    </LocationProvider>
   </React.StrictMode>
 
 export default App

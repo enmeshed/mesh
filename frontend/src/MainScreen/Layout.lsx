@@ -6,6 +6,7 @@ import { LeftDrawer, StickyTop } from '../Layout'
 import { GeneralNavbar } from '../Navbar'
 import { LeftMenu, LeftNav } from './LeftMenu'
 import { MainRouter } from './MainRouter'
+import { WorkContextToaster } from './WorkContextToaster'
 
 import { observeField } from '../Data/observeField'
 import { useObservable } from '../Data/useObservable'
@@ -14,13 +15,13 @@ import { AppState } from '../Data/AppState'
 
 export DesktopLayout() ->
   <React.Fragment>
-    <StickyTop>
-      <GeneralNavbar />
-      <LeftDrawer open={true} drawerWidth={250}>
-        <LeftMenu hideLogo />
-        <MainRouter />
-      </LeftDrawer>
-    </StickyTop>
+      <StickyTop>
+        <GeneralNavbar />
+        <LeftDrawer open={true} drawerWidth={250}>
+          <LeftMenu hideLogo />
+          <MainRouter />
+        </LeftDrawer>
+      </StickyTop>
   </React.Fragment>
 
 export MobileLayout() ->
@@ -46,8 +47,8 @@ export MobileLayout() ->
     >
       <LeftMenu hideLogo />
     </Drawer>
-    <StickyTop>
-      <GeneralNavbar />
-      <MainRouter />
-    </StickyTop>
+      <StickyTop>
+        <GeneralNavbar />
+        <MainRouter />
+      </StickyTop>
   </React.Fragment>

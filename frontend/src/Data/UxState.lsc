@@ -1,5 +1,7 @@
 import { entity, field, types, Entity } from '@ormojo/ephraim'
 
+globalThis = require('globalthis')()
+
 // User Interface state vars
 @entity({name: 'UxState'}) class UxState extends Entity:
   // Is menu drawer open for small devices?
@@ -31,6 +33,25 @@ import { entity, field, types, Entity } from '@ormojo/ephraim'
   clearTopBarExtra(widget): void ->
     if this.topBarExtra == widget:
       this.topBarExtra = null
+
+  // A work context can be used by a module (like the Post module)
+  // to direct the user to another module to perform an activity (like picking
+  // a content item to attach to the Post) and then resume the work the
+  // user was doing before.
+  //
+  // While a work context is active, a toast will be shown at the bottom
+  // of the screen allowing the user to jump back to the work he was doing.
+  // The work context can also have context-sensitive actions that tell
+  // the destination module how to respond to user interaction. (e.g. when
+  // a Post work context is active, clicking on a Content Item will attach
+  // that content to the Post.)
+  @field(types.any) workContext = null
+  setWorkContext(ctx): void ->
+    this.workContext = ctx
+  saveWorkContext(ctx = {}): void ->
+    ctx.initialHistoryStackDepth = globalThis.appState.historyStackDepth
+    this.workContext = ctx
+
 
 
 export { UxState }

@@ -1,8 +1,19 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Desktop, Mobile } from '../Layout'
 import { DesktopLayout, MobileLayout } from './Layout'
 
+import { watchWorkContexts, unwatchWorkContexts } from 'App/Util/WorkContext'
+
 export MainScreen() ->
+  // While within the main screen, respect work context triggers
+  useEffect(
+    ->
+      ctx = {}
+      watchWorkContexts(ctx)
+      -> unwatchWorkContexts(ctx)
+    []
+  )
+
   <React.Fragment>
     <Desktop>{->
         <DesktopLayout />

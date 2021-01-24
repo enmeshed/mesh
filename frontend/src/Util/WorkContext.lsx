@@ -1,0 +1,54 @@
+import React from 'react'
+import { observeField } from 'App/Data/observeField'
+import { toaster } from 'baseui/toast'
+import { Button } from 'baseui/button'
+import { navigate } from 'App/Util/createHistory'
+
+import { AppState } from 'App/Data/AppState'
+
+export watchWorkContexts(ctx) ->
+  let toastKey = null
+
+  clearToast(): void ->
+    if toastKey:
+      toaster.clear(toastKey)
+      now toastKey = null
+
+  ctx.sub = observeField(AppState.uxState, "workContext").subscribe({
+    next(ctxVal) ->
+      // CLear any existing toast
+      clearToast()
+      // Pop a new toast
+      if ctxVal:
+        onBack() ->
+          // First try to navigate using the stack
+          stackDiff = ctxVal.initialHistoryStackDepth - AppState.historyStackDepth
+          if stackDiff < 0:
+            console.log("workContext navigating with stackDiff", stackDiff)
+            navigate(stackDiff)
+          elif ctxVal.returnTo:
+            // Generic exit route if stack fails
+            navigate(ctxVal.returnTo)
+          AppState.uxState.setWorkContext(null)
+
+        now toastKey = toaster.show(
+          <div style={{display: 'flex', alignItems:'center', width: '100%'}}>
+            {ctxVal.contextDescription}
+            <div style={{flex: 1}} />
+            <Button onClick={onBack} size="compact">Back</Button>
+          </div>
+          {
+            closeable: false
+            overrides: {
+              InnerContainer: {
+                style: { width: '100%' }
+              }
+            }
+          }
+        )
+  })
+
+export unwatchWorkContexts(ctx) ->
+  if ctx.sub:
+    ctx.sub.unsubscribe()
+    ctx.sub = null

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useStyletron } from 'baseui'
+import { useNavigate } from '@reach/router'
 
 import { useSharedState } from 'App/Util/useSharedState'
 import { useTopBarWidget } from 'App/Util/useTopBarWidget'
@@ -19,15 +20,57 @@ import { ResponsiveIconButton } from 'App/Util/Buttons'
 import SearchIcon from 'baseui/icon/search'
 import PlusIcon from 'baseui/icon/plus'
 
+export ContentCard({ thumbnail, body }) ->
+  <Card overrides={{
+    Root: {
+      style: {
+        boxSizing: 'border-box'
+        paddingLeft: '16px'
+        paddingRight: '16px'
+        paddingTop: '16px'
+        paddingBottom: '16px'
+      }
+    }
+    Contents: {
+      style: {
+        boxSizing: 'border-box'
+        marginLeft: 0
+        marginRight: 0
+        marginTop: 0
+        marginBottom: 0
+      }
+    }
+    Body: {
+      style: {
+        height: '96px'
+        marginBottom: 0
+        overflow: 'hidden'
+        textOverflow: 'ellipsis'
+        "-webkit-line-clamp": 4
+        "-webkit-box-orient": "vertical"
+        display: "-webkit-box"
+      }
+    }
+  }}>
+    { if thumbnail:
+      <CardThumbnail src={thumbnail} />
+    }
+    {body}
+  </Card>
+
 export Content() ->
   // Search state is shared with the nav bar component which we inject elsewhere
   [ search, setSearch, searchHandle ] = useSharedState('')
-  [ content, loading ] = useContent(search)
+  [ content, loading ] = useContent({search})
   isMobile = useIsMobile()
+  navigate = useNavigate()
   flex = if isMobile: '1 1 100%' else: '1 1 33%'
   maxWidth = if isMobile: '100%' else: '33%'
 
   useTopBarWidget(-> <ContentNavbarWidget searchHandle={searchHandle} />)
+
+  onContentItemClicked(item) ->
+    navigate(`/main/content/edit/${item.id}`)
 
   <VerticalScrollArea>
     <div style={{
@@ -35,55 +78,21 @@ export Content() ->
       flexWrap: 'wrap'
     }}>
       {...for idx i, elem c in content:
-        <div key={i} style={{ flex, maxWidth, padding: '8px', boxSizing: 'border-box' }}>
-          <Card key={i} overrides={{
-            Root: {
-              style: {
-                boxSizing: 'border-box'
-                paddingLeft: '16px'
-                paddingRight: '16px'
-                paddingTop: '16px'
-                paddingBottom: '16px'
-              }
-            }
-            Contents: {
-              style: {
-                boxSizing: 'border-box'
-                marginLeft: 0
-                marginRight: 0
-                marginTop: 0
-                marginBottom: 0
-              }
-            }
-            Body: {
-              style: {
-                height: '96px'
-                marginBottom: 0
-                overflow: 'hidden'
-                textOverflow: 'ellipsis'
-                "-webkit-line-clamp": 4
-                "-webkit-box-orient": "vertical"
-                display: "-webkit-box"
-              }
-            }
-          }}>
-            { if c.media?[0]:
-              <CardThumbnail
-                src={c.media[0].thumbUrl}
-              />
-            }
-            {c.body}
-          </Card>
+        <div key={i} style={{ flex, maxWidth, padding: '8px', boxSizing: 'border-box' }} onClick={-> onContentItemClicked(c) }>
+          <ContentCard thumbnail={c.media?[0]?.thumbUrl} body={c.body} />
         </div>
       }
-      <div>search: { search }</div>
     </div>
   </VerticalScrollArea>
 
-ContentNavbarWidget({searchHandle}) ->
+ContentNavbarWidget({searchHandle, allowCreate}) ->
   [ css, theme ] = useStyletron()
   [ search, setSearch ] = useSharedState(searchHandle)
   [ liveSearch, setLiveSearch ] = useState('')
+  navigate = useNavigate()
+
+  onCreateContent() ->
+    navigate("/main/content/create")
 
   <div className={css({
     display: 'flex'
@@ -110,5 +119,7 @@ ContentNavbarWidget({searchHandle}) ->
         />
       </form>
     </div>
-    <ResponsiveIconButton Icon={PlusIcon} label="Create" />
+    { if allowCreate:
+      <ResponsiveIconButton Icon={PlusIcon} label="Create" onClick={onCreateContent} />
+    }
   </div>

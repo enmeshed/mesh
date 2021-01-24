@@ -1,5 +1,5 @@
 import { entity, field, types, createMemory, Entity } from '@ormojo/ephraim'
-
+import { history } from 'App/Util/createHistory'
 import { UxState } from './UxState'
 
 globalThis = require('globalthis')()
@@ -7,8 +7,23 @@ globalThis = require('globalthis')()
 @entity({name: 'AppState'}) class AppState extends Entity {
   @field(UxState) uxState = {}
 
+  constructor() ->
+    history.listen(this.historyListener)
+
+  // Browser history tracking
+  @field(types.number) historyStackDepth = 0
   didNavigate(dest) ->
     this.uxState.isMenuOpen = false
+
+  historyListener(val) =>
+    { action } = val
+    if action == "PUSH":
+      this.historyStackDepth = this.historyStackDepth + 1
+    elif action == "POP":
+      numberPopped = -(val.to) or 1
+      if this.historyStackDepth >= numberPopped:
+        this.historyStackDepth = this.historyStackDepth - numberPopped
+
 }
 
 thisAppState = createMemory(AppState)

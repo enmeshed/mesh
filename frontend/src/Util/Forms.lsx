@@ -1,0 +1,62 @@
+import React from 'react'
+import { Card } from 'baseui/card'
+import { Block } from 'baseui/block'
+import { VerticalScrollArea } from 'App/Layout'
+
+export FormHeading(props) ->
+  <Block as="h3" color="contentPrimary" font="font550" marginBottom="8px" {...props} />
+
+sectionCardOverrides = {
+      Root: {
+        style: {
+          width: '95vw'
+          maxWidth: '650px'
+          borderBottomWidth: 0
+          borderTopWidth: 0
+          borderLeftWidth: 0
+          borderRightWidth: 0
+        }
+      }
+      Contents: {
+        style: {
+          marginBottom: 0
+          marginLeft: 0
+          marginRight: 0
+          marginTop: 0
+        }
+      }
+}
+
+export FormSection({title, children, ...restProps}) ->
+  <Card overrides={sectionCardOverrides}>
+    <FormHeading>{title}</FormHeading>
+    {children}
+  </Card>
+
+export FormControlGroup({tight, children}) ->
+  childs = React.Children.toArray(children)
+
+  <div style={{display: 'flex'}}>
+    {...for idx i, elem child in childs:
+      lastChild = (i == childs.length - 1)
+      <div key={i} style={{
+        ...if not tight: { flex: 1 }
+        ...if not lastChild: {marginRight: '5px'}
+      }}>
+        {child}
+      </div>
+    }
+  </div>
+
+formScreenScrollAreaStyles = {paddingLeft: '4px', paddingRight: '4px', paddingTop: '4px', paddingBottom: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center'}
+
+// A fullscreen (mobile) scrollable form
+export FormScreen({children}) ->
+  <VerticalScrollArea style={formScreenScrollAreaStyles}>
+    <div style={{maxWidth: '650px'}}>
+      {children}
+    </div>
+  </VerticalScrollArea>
+
+export FormActionButtons({children}) ->
+  <FormControlGroup tight>{children}</FormControlGroup>

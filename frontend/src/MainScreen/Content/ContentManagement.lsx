@@ -1,0 +1,56 @@
+import React from 'react'
+import { useStyletron } from 'baseui'
+import { useNavigate } from '@reach/router'
+
+import { useContent } from 'App/Data/useContent'
+
+import { FormControl } from 'baseui/form-control'
+import { Textarea } from "baseui/textarea"
+import { FileUploader } from "baseui/file-uploader"
+import { Button } from 'baseui/button'
+
+import { TagInput } from 'App/Util/TagInput'
+import { FormSection, FormControlGroup, FormScreen, FormActionButtons } from 'App/Util/Forms'
+
+ContentForm({editContentItemId}) ->
+  [ text, setText ] = React.useState('')
+  [ tags, setTags ] = React.useState('')
+  navigate = useNavigate()
+  useContent({id: editContentItemId}, ([item]) ->
+    if item:
+      setText(item.body)
+      setTags(item.tags)
+  )
+
+  onCancel() -> navigate(-1)
+
+  <React.Fragment>
+    <FormSection title="Content">
+      <FormControl label="Text">
+        <Textarea
+          value={text}
+          onChange={(ev) -> setText(ev.target.value)}
+          placeholder="Content text..."
+        />
+      </FormControl>
+      <FormControl label="Image">
+        <FileUploader />
+      </FormControl>
+    </FormSection>
+    <FormSection title="Search and Indexing">
+      <FormControl label="Tags">
+        <TagInput tags={tags} setTags={setTags}
+          placeholder={"Add tags..."}
+        />
+      </FormControl>
+    </FormSection>
+    <FormActionButtons>
+      <Button>Save</Button>
+      <Button kind="secondary" onClick={onCancel}>Cancel</Button>
+    </FormActionButtons>
+  </React.Fragment>
+
+export ManageContent({itemId}) ->
+  <FormScreen>
+    <ContentForm editContentItemId={itemId} />
+  </FormScreen>

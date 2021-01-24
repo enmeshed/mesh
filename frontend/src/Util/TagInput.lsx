@@ -1,0 +1,49 @@
+import React from 'react'
+import { useStyletron } from 'baseui'
+import { Tag } from 'baseui/tag'
+import { Input, StyledInput } from 'baseui/input'
+
+// Input control for tags
+InputReplacement = React.forwardRef(
+  ({tags, removeTag, ...restProps}, ref) ->
+    [css] = useStyletron()
+    <div className={css({
+      flex: '1 1 0%'
+      flexWrap: 'wrap'
+      display: 'flex'
+      alignItems: 'center'
+    })}>
+      {...for idx index, elem tag in tags:
+        <Tag variant="solid" onActionClick={-> removeTag(tag)} key={index}>
+          {tag}
+        </Tag>
+      }
+      <StyledInput ref={ref} {...restProps} />
+    </div>
+)
+
+export TagInput({tags, setTags, placeholder, ...restProps}) ->
+  [ value, setValue ] = React.useState('')
+  addTag(tag): void -> setTags([...tags, tag])
+  removeTag(tag): void -> setTags(tags.filter(t -> t != tag))
+  onKeyDown(ev): void ->
+    match ev.keyCode:
+      | 13:
+        if not value: return
+        addTag(value)
+        setValue('')
+      | 8:
+        if value or (tags.length == 0): return
+        removeTag(tags[tags.length - 1])
+
+  <Input
+    value={value} onChange={e -> setValue(e.currentTarget.value)}
+    placeholder={if tags.length: '' else: placeholder}
+    overrides={{
+      Input: {
+        style: { width: 'auto', flexGrow: 1 }
+        component: InputReplacement
+        props: { tags, removeTag, onKeyDown }
+      }
+    }}
+  />

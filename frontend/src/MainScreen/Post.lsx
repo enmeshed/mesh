@@ -1,8 +1,9 @@
 import React from 'react'
 import { useStyletron } from 'baseui'
+import { useNavigate } from '@reach/router'
 
-import { Card, StyledBody } from 'baseui/card'
-import { Block } from 'baseui/block'
+import { AppState } from 'App/Data/AppState'
+
 import { FormControl } from 'baseui/form-control'
 import { DatePicker } from 'baseui/datepicker'
 import { TimePicker } from 'baseui/timepicker'
@@ -13,80 +14,45 @@ import { FileUploader } from "baseui/file-uploader"
 import { Button } from 'baseui/button'
 
 import { VerticalScrollArea } from '../Layout'
+import { FormSection, FormControlGroup, FormScreen } from 'App/Util/Forms'
 
 { moment } = require('globalthis')()
 
 // Post form
-FormHeading(props) ->
-  <Block as="h3" color="contentPrimary" font="font550" marginBottom="8px" {...props} />
-
-formControlOverrides = {
-  ControlContainer: {
-    style: {
-      marginRight: '5px'
-    }
-  }
-}
-
-FormSection({title, children, ...restProps}) ->
-    <Card
-      overrides={{
-        Root: {
-          style: {
-            width: '95vw'
-            maxWidth: '650px'
-            borderBottomWidth: 0
-            borderTopWidth: 0
-            borderLeftWidth: 0
-            borderRightWidth: 0
-          }
-        }
-        Contents: {
-          style: {
-            marginBottom: 0
-            marginLeft: 0
-            marginRight: 0
-            marginTop: 0
-          }
-        }
-      }}
-    >
-      <FormHeading>{title}</FormHeading>
-      {children}
-    </Card>
-
-FormControlGroup({children}) ->
-  childs = React.Children.toArray(children)
-
-  <div style={{display: 'flex'}}>
-    {...for idx i, elem child in childs:
-      lastChild = (i == childs.length - 1)
-      <div key={i} style={{flex: 1, ...if not lastChild: {marginRight: '5px'}}}>
-        {child}
-      </div>
-    }
-  </div>
-
 PostForm() ->
   [ css, theme ] = useStyletron()
   [ date, setDate ] = React.useState([new Date()])
   [ time, setTime ] = React.useState(new Date())
   [ zone, setZone ] = React.useState(moment.tz.guess())
   [ text, setText ] = React.useState('')
-
+  navigate = useNavigate()
   validTargets = [
     { label: 'Twitter: @SimplibuzzTech', id: 1 }
     { label: 'Facebook Page: Simplibuzz Tech', id: 2 }
   ]
   [ targets, setTargets ] = React.useState([ ])
 
-  <div style={{maxWidth: '650px'}}>
+  onCancel() -> navigate(-1)
+  onGetContent() ->
+    AppState.uxState.saveWorkContext({
+      type: 'post'
+      contextDescription: `Choose content for your Post.`
+      returnTo: '/main/post'
+      hooks: {
+        onChooseContent(content) ->
+          console.log("chose content", content)
+      }
+    })
+    navigate('/main/content')
+
+  <React.Fragment>
     <FormSection title="Schedule">
       <FormControlGroup>
           <FormControl label="Date">
             <DatePicker
               value={date}
               onChange={ ({date}) -> setDate(if Array.isArray(date): date else: [date])}
+              formatString="MM/dd/yyyy"
             />
           </FormControl>
           <FormControl label="Time">
@@ -97,7 +63,7 @@ PostForm() ->
             />
           </FormControl>
       </FormControlGroup>
-      <FormControl label="Timezone" overrides={formControlOverrides}>
+      <FormControl label="Timezone">
         <TimezonePicker
           value={zone}
           onChange={ (zone) ->
@@ -120,6 +86,7 @@ PostForm() ->
     </FormSection>
 
     <FormSection title="Content">
+      <Button onClick={onGetContent}>Get Content from Library</Button>
       <FormControl label="Text">
         <Textarea
           value={text}
@@ -132,14 +99,16 @@ PostForm() ->
       </FormControl>
     </FormSection>
 
-    <div style={{display: 'flex'}}>
-      <Button style={{marginRight: '5px'}}>Post</Button>
+    <FormControlGroup tight>
+      <Button>Post</Button>
       <Button>Save Draft</Button>
-    </div>
-  </div>
+      <Button kind="secondary" onClick={onCancel}>Cancel</Button>
+    </FormControlGroup>
+  </React.Fragment>
 
 // Post screen
-export Post() ->
-  <VerticalScrollArea style={{paddingLeft: '4px', paddingRight: '4px', paddingTop: '4px', paddingBottom: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+export Post({location}) ->
+  console.log("location", location)
+  <FormScreen>
     <PostForm />
-  </VerticalScrollArea>
+  </FormScreen>
