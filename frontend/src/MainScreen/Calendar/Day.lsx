@@ -16,7 +16,7 @@ import { StatefulPopover } from 'baseui/popover'
 import { Block } from 'baseui/block'
 import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
 
-import { CalendarSelect } from './CalendarSelect'
+import { ActiveCalendarSelect } from './CalendarSelect'
 import { getImageButtonSizing, ResponsiveIconButton } from 'App/Util/Buttons'
 
 import ChevronLeft from "baseui/icon/chevron-left"
@@ -76,7 +76,7 @@ BlankEntry({small, date}) ->
 
   onClick(ev) ->
     ev.preventDefault()
-    navigate("/main/post")
+    navigate("/main/post", { state: { date: date.toISOString(true), time: date.toISOString(true) } })
 
   <div className={css({
     display: 'flex'
@@ -214,8 +214,9 @@ export Day({year, month, day}) ->
   useExtraMenu(-> <MobileExtraPopupContent />)
 
   // Event processing (TODO: make this sane)
-  events = useDayEvents(date)
+  events = useDayEvents(start)
   posts = events.filter(x -> x.post)
+  console.log("posts", posts)
   posts.sort((a,b) -> a.scheduledAt.valueOf() - b.scheduledAt.valueOf())
   packer = new BinPacker(start, end, 30)
   packer.packSortedEvents(posts, (post) -> momentForZone(zone, post.scheduledAt))
@@ -283,12 +284,14 @@ DayNavbarWidget({day, zone}) ->
       />
     }
     { if not isMobile:
-      <CalendarSelect allowManage />
+      <div className={css({width: '250px'})}>
+        <ActiveCalendarSelect allowManage allowAll />
+      </div>
     }
   </div>
 
 MobileExtraPopupContent() ->
   [css, theme] = useStyletron()
   <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
-    <CalendarSelect allowManage />
+    <ActiveCalendarSelect allowManage allowAll />
   </Block>

@@ -50,7 +50,52 @@ ContentForm({editContentItemId}) ->
     </FormActionButtons>
   </React.Fragment>
 
+// Read-only form for remote content
+RemoteContentForm({contentItem}) ->
+  navigate = useNavigate()
+  imageSrc = contentItem.media?[0]?.fullUrl
+  text = contentItem.body
+
+  onCancel() -> navigate(-1)
+
+  <React.Fragment>
+    <FormSection title="Remote Content">
+      {if text:
+        <FormControl label="Text">
+          <Textarea
+            value={text}
+            onChange={-> return}
+            placeholder="Content text..."
+            disabled
+          />
+        </FormControl>
+      }
+      {if imageSrc:
+        <FormControl label="Image">
+          <img
+            src={imageSrc}
+            style={{
+              maxWidth: '100%'
+              maxHeight: '650px'
+              objectFit: 'contain'
+            }}
+          />
+        </FormControl>
+      }
+    </FormSection>
+    <FormActionButtons>
+      <Button>Post This Content</Button>
+      <Button kind="secondary" onClick={onCancel}>Cancel</Button>
+    </FormActionButtons>
+  </React.Fragment>
+
 export ManageContent({itemId}) ->
   <FormScreen>
     <ContentForm editContentItemId={itemId} />
+  </FormScreen>
+
+export ViewContent({location}) ->
+  content = location.state?.contentItem
+  <FormScreen>
+    <RemoteContentForm contentItem={content} />
   </FormScreen>

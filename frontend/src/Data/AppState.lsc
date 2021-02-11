@@ -1,11 +1,13 @@
 import { entity, field, types, createMemory, Entity } from '@ormojo/ephraim'
 import { history } from 'App/Util/createHistory'
 import { UxState } from './UxState'
+import { SessionState } from './SessionState'
 
 globalThis = require('globalthis')()
 
 @entity({name: 'AppState'}) class AppState extends Entity {
   @field(UxState) uxState = {}
+  @field(SessionState) sessionState = {}
 
   constructor() ->
     history.listen(this.historyListener)

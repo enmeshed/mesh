@@ -1,14 +1,35 @@
 ICAL = require('ical.js')
 
-// Read an ICal calendar file, pushing all events into an object with
-// keys of the form "YYYY-MM-DD"
+{ moment } = require('globalthis')()
+
+// Read an ICal calendar file, collating all events.
 export class ICal:
   eventsByDate = {}
+  sortedEvents = []
 
-  _addEvent(dt, data): void ->
-    { eventsByDate } = this
-    evs = eventsByDate[dt] or (eventsByDate[dt] = [])
+  finishEvents(): void ->
+    this.sortedEvents.sort((a, b) -> a.time - b.time)
+    return
+
+  addEvent(icalTime, icalEvent): void ->
+    { eventsByDate, sortedEvents } = this
+    evs = eventsByDate[icalTime] or (eventsByDate[icalTime] = [])
+    mom = moment([
+      icalTime.year
+      icalTime.month - 1
+      icalTime.day
+      icalTime.hour
+      icalTime.minute
+      icalTime.second
+    ])
+    data = {
+      type: "ical"
+      event: icalEvent
+      time: mom.unix()
+      summary: icalEvent.summary
+    }
     evs.push(data)
+    sortedEvents.push(data)
 
   // Load an iCal-formatted file into the events array
   loadICal(data): void ->
@@ -22,12 +43,23 @@ export class ICal:
         while not iter.complete:
           startDate = iter.next()
           if startDate:
-            this._addEvent(startDate, { summary: event.summary })
+            this.addEvent(startDate, event)
       else:
-        this._addEvent(event.startDate, { summary: event.summary })
+        this.addEvent(event.startDate, event)
+    this.finishEvents()
 
   getEvents(dt) ->
     this.eventsByDate[dt or ''] or []
 
   getFirstEvent(dt) ->
     this.getEvents(dt)[0]
+
+  getEventsBetween(unixt0, unixt1) ->
+    { sortedEvents: events }= this
+    result = []
+    let idx = events.findIndex(x -> x.time >= unixt0)
+    if idx == -1: return result
+    while events[idx] and (events[idx].time <= unixt1):
+      result.push(events[idx])
+      idx++
+    result

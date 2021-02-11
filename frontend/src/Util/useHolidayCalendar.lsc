@@ -1,9 +1,16 @@
 import { calendar } from '../holidays_us_en.ics.js'
 import { ICal } from './ICal'
 
+{ moment } = require('globalthis')()
+
 export holidayCalendar = new ICal()
 holidayCalendar.loadICal(calendar)
 
 export useHolidayCalendar(ymd) ->
-  events = holidayCalendar.getEvents(ymd)
+  start = moment(ymd).startOf('day').unix()
+  end = moment(ymd).endOf('day').unix()
+  events = holidayCalendar.getEventsBetween(start, end)
   events
+
+export useHolidaysBetween(unixStart, unixEnd) ->
+  holidayCalendar.getEventsBetween(unixStart, unixEnd)

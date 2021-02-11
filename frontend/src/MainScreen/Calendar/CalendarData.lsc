@@ -1,4 +1,6 @@
-import { useHolidayCalendar } from '../../Util/useHolidayCalendar'
+import { useHolidaysBetween } from 'App/Util/useHolidayCalendar'
+
+{ moment } = require('globalthis')()
 
 mocks = {
   "2021-01-20": [
@@ -50,9 +52,13 @@ mocks = {
   ]
 }
 
-export useDayEvents(mom) ->
-  key = mom.format('YYYY-MM-DD')
-  holidays = useHolidayCalendar(key)
+export useDayEvents(startMom) ->
+  start = moment(startMom).startOf('day').unix()
+  end = moment(startMom).endOf('day').unix()
+
+  holidays = useHolidaysBetween(start, end)
+
+  key = startMom.format('YYYY-MM-DD')
   mock = mocks[key] or []
 
   for elem mockery in mock:
@@ -60,4 +66,8 @@ export useDayEvents(mom) ->
       v = `${key} ${mockery.timeOfDay}`
       mockery.scheduledAt = moment(v)
 
-  holidays.concat(mock)
+  evs = holidays.concat(mock)
+
+  console.log("day", key, "start", start, "end", end, "evs", evs)
+
+  evs

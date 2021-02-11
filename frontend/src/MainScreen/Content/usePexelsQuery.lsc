@@ -1,0 +1,67 @@
+import { useState, useEffect } from 'react'
+import fetch from 'cross-fetch'
+
+// Parse Pexels photo api bodies
+parsePhotos(photos) ->
+  [...for elem p in photos:
+    [{
+      remote: true // Flag content as not hosted/editable
+      media: [
+        {
+          thumbUrl: p.src.medium
+          fullUrl: p.src.large
+        }
+      ]
+    }]
+  ]
+
+// Cache most recent pexels query
+cachedResult = {}
+
+export usePexelsQuery({query}) ->
+  [ content, setContent ] = useState([])
+  [ loading, setLoading ] = useState(true)
+  [ error, setError ] = useState(null)
+
+  runQuery() -/>
+    setError(null)
+    if query:
+      if query == cachedResult.query:
+        console.log("returning cached pexels query", query)
+        setContent(cachedResult.data)
+        setLoading(false)
+        return
+      console.log("running pexels search", query)
+      url = new URL("https://api.pexels.com/v1/search")
+      url.searchParams.append("query", query)
+      url.searchParams.append("per_page", 60)
+      try:
+        setLoading(true)
+        res <- fetch(
+          url.toString()
+          {
+            method: "GET"
+            headers: {
+              "Authorization": "563492ad6f917000010000018d5ab89053464c15899941396917b702"
+            }
+          }
+        )
+        json <- res.json()
+        data = parsePhotos(json.photos)
+        cachedResult.query = query
+        cachedResult.data = data
+        setContent(data)
+      catch err:
+        console.error("fetch error", err)
+        setError(err)
+      finally:
+        setLoading(false)
+    else:
+      setContent([])
+
+  queryEffect(): void ->
+    runQuery().catch(err -> setError(err))
+
+  useEffect(queryEffect, [query])
+
+  return [ content, loading, error ]

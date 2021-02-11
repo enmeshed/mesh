@@ -1,0 +1,55 @@
+// Utilities for displaying social accounts in target selectors, etc.
+import React from 'react'
+
+import FacebookIcon from 'App/Icons/facebook-f'
+import TwitterIcon from 'App/Icons/twitter'
+import BlankIcon from 'baseui/icon/blank'
+import { Tag } from 'baseui/tag'
+
+export { FacebookIcon, TwitterIcon }
+
+export MediumIcon({medium, ...restProps}) ->
+  match medium:
+    | 'facebook': <FacebookIcon {...restProps} />
+    | 'twitter': <TwitterIcon {...restProps} />
+    | else: <BlankIcon {...restProps} />
+
+export mediumName(medium) ->
+  match medium:
+    | 'facebook': 'Facebook'
+    | 'twitter': 'Twitter'
+    | 'instagram': 'Instagram'
+    | else: 'other'
+
+export mediumColor(medium) ->
+  match medium:
+    | "twitter": "#1DA1F2"
+    | "facebook": "#4267B2"
+    | else: "#898F9C"
+
+saTagOverrides = {
+  Text: {
+    style: {
+      maxWidth: '250px'
+      display: 'inline-flex'
+      alignItems: 'center'
+    }
+  }
+}
+
+export SocialAccountTag({value, ...restProps}) ->
+  color = mediumColor(value.medium)
+  kind = if value.medium: "custom" else: "primary"
+  <Tag {...restProps} color={color} kind={kind} overrides={saTagOverrides} />
+
+export getSocialAccountSelectLabel({option}) ->
+  <span style={{display: 'inline-flex', alignItems: 'center'}}>
+    <MediumIcon size={16} medium={option.medium} color={mediumColor(option.medium)}/>
+    {option.username}
+  </span>
+
+export getSocialAccountTagLabel({option}) ->
+  <React.Fragment>
+    <MediumIcon size={16} medium={option.medium} />
+    {option.username}
+  </React.Fragment>

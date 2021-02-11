@@ -1,0 +1,97 @@
+import { useState, useEffect } from 'react'
+
+// Use a single item from a Store, given by the item's id
+export useStoreItem(store, id, opts = {}) ->
+  // Value. Initialize from cache when possible.
+  [value, setValue] = useState(if not opts.noCache: store.getCached(id))
+  // Loading indicator, true if uncached and loading the requested item
+  [loading, setLoading] = useState(if id and (not value): true else: false)
+  // Error state
+  [error, setError] = useState(null)
+
+  doSetValue(nextValue): void ->
+    setValue(nextValue)
+
+  // Run the get operation, updating the value in the process
+  doGet(): void -/>
+    try:
+      if id~looseEq(null): return
+      setError(null)
+      setLoading(true)
+      nextValue <- store.get(id)
+      doSetValue(nextValue)
+    catch err:
+      doSetValue(undefined)
+      setError(err)
+    finally:
+      setLoading(false)
+
+  // Effect to run when the ID changes
+  changedGetEffect(): void ->
+    // No ID, no value
+    if id~looseEq(null):
+      doSetValue(undefined)
+      return
+
+    let nextValue = undefined
+
+    if not opts.noCache:
+      now nextValue = store.getCached(id)
+      if (nextValue != undefined) and (nextValue != value):
+        doSetValue(nextValue)
+
+    if opts.noCache or (nextValue == undefined) or (not opts.elideFetch):
+      doGet().catch(err -> setError(err))
+
+  useEffect(changedGetEffect, [id])
+
+  [ value, loading, error ]
+
+// Use a query from a Store
+export useStoreQuery(store, initialQuery, opts = {}) ->
+  [ value, setValue ] = useState(undefined)
+  [ loading, setLoading ] = useState(true)
+  [ error, setError ] = useState(null)
+  [ query, setQuery ] = useState(initialQuery)
+
+  doQuery(): void -/>
+    try:
+      setError(null)
+      setLoading(true)
+      nextValue <- store.query(query)
+      setValue(nextValue)
+    catch err:
+      setValue(undefined)
+      setError(err)
+    finally:
+      setLoading(false)
+
+  changedQueryEffect(): void ->
+    doQuery().catch(err -> setError(err))
+
+  useEffect(changedQueryEffect, [query])
+
+  [ value, setQuery, loading, error ]
+
+// Use a writable Store
+export useWritableStore(store) ->
+  [ loading, setLoading ] = useState(false)
+  [ error, setError ] = useState(null)
+
+  doStore(entities) -/>
+    try:
+      setError(null)
+      setLoading(true)
+      <- store.set(entities)
+    catch err:
+      setError(err)
+    finally:
+      setLoading(false)
+
+  write(entities, onSuccess) ->
+    doStore(entities).then(
+      (): void -> if onSuccess: onSuccess()
+      (err): void -> setError(err)
+    )
+
+  [write, loading, error]

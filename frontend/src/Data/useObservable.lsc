@@ -1,24 +1,33 @@
 import {useState, useEffect} from 'react'
 import { observeField } from './observeField'
 
-export useObservable(observableGenerator, initialState) ->
+export useObservable(observableGenerator, initialState, opts={}) ->
   [value, setValue] = useState(initialState)
-
-  observable = observableGenerator()
 
   useEffect(
     -> {
+      if opts.debug: console.log("sub")
+      observable = observableGenerator()
+
       subscription = observable.subscribe({
         next(val) ->
+          if opts.debug: console.log("next", val)
           setValue(val)
       })
 
-      return (-> subscription.unsubscribe())
+      return (->
+        if opts.debug: console.log("unsub")
+        subscription.unsubscribe()
+      )
     }
     []
   )
 
   value
 
-export useObservableField(entity, field) ->
-  useObservable(-> observeField(entity, field), entity[field])
+export useObservableField(entity, field, opts) ->
+  useObservable(-> observeField(entity, field), entity[field], opts)
+
+export useKvStore(store, field, filter, initialSearch = {}) ->
+  [search, setSearch] = useState(initialSearch)
+  data = useObservableField(store, field)

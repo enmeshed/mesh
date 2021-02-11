@@ -1,10 +1,9 @@
-mocks = [
-  {
-    id: "cal_1"
-    name: "Your Calendar"
-  }
-]
+import { AppState } from './AppState'
+import { useStoreQuery } from './useStore'
 
 // [ data, loading, errors ]
 export useCalendars() ->
-  [ mocks, false, false ]
+  calStore = AppState.sessionState.accessibleCalendars
+  [ value, setQuery, loading, error ] = useStoreQuery(calStore, {})
+
+  [ value or [], loading, error ]

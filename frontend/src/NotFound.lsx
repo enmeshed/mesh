@@ -1,27 +1,19 @@
 import React from 'react'
 
-import { useStyletron } from 'baseui'
-import { Card, StyledBody as CardBody, StyledTitle as CardTitle, StyledAction as CardAction } from 'baseui/card'
+import { StyledAction as CardAction } from 'baseui/card'
 import { Button } from 'baseui/button'
 
+import { ErrorCard } from 'App/Util/ErrorCard'
+
 import { HCentered, Centered, StickyTop } from './Layout'
-import { EmptyTopNavbar } from './Navbar'
 import NotFoundIcon from './Icons/searchDocument'
 
 export NotFoundCard() ->
-  [css, theme] = useStyletron()
-  <Card overrides={{Root: { style: { width: "384px", maxWidth: "95vw" } } }}>
-    <HCentered>
-      <NotFoundIcon size={128} color={theme.colors.contentInverseSecondary} />
-    </HCentered>
-    <HCentered>
-      <CardTitle>
-        Not Found
-      </CardTitle>
-    </HCentered>
-    <CardBody>
-      Sorry, but we can't find the page you're looking for. Let's get you back to the app:
-    </CardBody>
+  <ErrorCard
+    Icon={NotFoundIcon}
+    title="Not Found"
+    body={"Sorry, but we can't find the page you're looking for. Let's get you back to the app:"}
+  >
     <CardAction>
       <Button
         overrides={{
@@ -31,7 +23,7 @@ export NotFoundCard() ->
         Back to Homepage
       </Button>
     </CardAction>
-  </Card>
+  </ErrorCard>
 
 export NotFound() ->
   <Centered>

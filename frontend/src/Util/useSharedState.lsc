@@ -31,6 +31,10 @@ export useSharedState(initialStateOrHandle) ->
       initialStateOrHandle
     else:
       makeSharedStateHandle(initialStateOrHandle)
+  else:
+    // Detect change to a new handle
+    if isStateHandle(initialStateOrHandle) and initialStateOrHandle != handleRef.current:
+      handleRef.current = initialStateOrHandle
 
   handle = handleRef.current
 

@@ -5,6 +5,9 @@ import { useNavigate } from '@reach/router'
 import { useSharedState } from 'App/Util/useSharedState'
 import { useTopBarWidget } from 'App/Util/useTopBarWidget'
 import { useContent } from 'App/Data/useContent'
+import { WorkContext} from 'App/Util/WorkContext'
+import { usePexelsQuery } from './usePexelsQuery'
+import { useNavigationData } from 'App/Util/useNavigationData'
 
 import { Input } from 'baseui/input'
 import {
@@ -13,47 +16,54 @@ import {
   StyledAction as CardAction
   StyledThumbnail as CardThumbnail
 } from 'baseui/card'
+import { StyledLink as Link } from 'baseui/link'
 
-import { VerticalScrollArea, useIsMobile } from 'App/Layout'
+import { VerticalScrollArea, useIsMobile, HCentered } from 'App/Layout'
 import { ResponsiveIconButton } from 'App/Util/Buttons'
+import { ErrorCard, ErrorCardContainer } from 'App/Util/ErrorCard'
 
 import SearchIcon from 'baseui/icon/search'
+import NotFoundIcon from 'App/Icons/searchDocument'
 import PlusIcon from 'baseui/icon/plus'
 
 export ContentCard({ thumbnail, body }) ->
-  <Card overrides={{
-    Root: {
-      style: {
-        boxSizing: 'border-box'
-        paddingLeft: '16px'
-        paddingRight: '16px'
-        paddingTop: '16px'
-        paddingBottom: '16px'
+  imageOnly = if thumbnail and (not body): true else: false
+  headerImage = if thumbnail and (not imageOnly): thumbnail
+  <Card
+    overrides={{
+      Root: {
+        style: {
+          boxSizing: 'border-box'
+        }
       }
-    }
-    Contents: {
-      style: {
-        boxSizing: 'border-box'
-        marginLeft: 0
-        marginRight: 0
-        marginTop: 0
-        marginBottom: 0
+      Contents: {
+        style: {
+          boxSizing: 'border-box'
+        }
       }
-    }
-    Body: {
-      style: {
-        height: '96px'
-        marginBottom: 0
-        overflow: 'hidden'
-        textOverflow: 'ellipsis'
-        "-webkit-line-clamp": 4
-        "-webkit-box-orient": "vertical"
-        display: "-webkit-box"
+      Body: {
+        style: {
+          height: '96px'
+          marginBottom: 0
+          overflow: 'hidden'
+          textOverflow: 'ellipsis'
+          "-webkit-line-clamp": 4
+          "-webkit-box-orient": "vertical"
+          display: "-webkit-box"
+        }
       }
-    }
-  }}>
-    { if thumbnail:
-      <CardThumbnail src={thumbnail} />
+    }}
+    headerImage={headerImage}
+  >
+    { if imageOnly:
+      <img
+        style={{
+          height: '100%'
+          width: '100%'
+          objectFit: 'contain'
+        }}
+        src={thumbnail}
+      />
     }
     {body}
   </Card>
@@ -67,10 +77,11 @@ export Content() ->
   flex = if isMobile: '1 1 100%' else: '1 1 33%'
   maxWidth = if isMobile: '100%' else: '33%'
 
-  useTopBarWidget(-> <ContentNavbarWidget searchHandle={searchHandle} />)
+  useTopBarWidget(-> <ContentNavbarWidget searchHandle={searchHandle} allowCreate />)
 
-  onContentItemClicked(item) ->
-    navigate(`/main/content/edit/${item.id}`)
+  onContentItemClicked(item): void ->
+    if not WorkContext.runHook('onChooseContent', item):
+      navigate(`/main/content/edit/${item.id}`)
 
   <VerticalScrollArea>
     <div style={{
@@ -88,7 +99,7 @@ export Content() ->
 ContentNavbarWidget({searchHandle, allowCreate}) ->
   [ css, theme ] = useStyletron()
   [ search, setSearch ] = useSharedState(searchHandle)
-  [ liveSearch, setLiveSearch ] = useState('')
+  [ liveSearch, setLiveSearch ] = useState(search or '')
   navigate = useNavigate()
 
   onCreateContent() ->
@@ -123,3 +134,87 @@ ContentNavbarWidget({searchHandle, allowCreate}) ->
       <ResponsiveIconButton Icon={PlusIcon} label="Create" onClick={onCreateContent} />
     }
   </div>
+
+export ContentColumns({nColumns, children}) ->
+  columnWidth = (100 / nColumns) + '%'
+  columnFlex = `1 1 ${columnWidth}`
+
+  // Bin children into columns
+  bins = [ ...for let i=0;i<nColumns;i++: [[]] ]
+  childs = React.Children.toArray(children)
+  for idx i, elem child in childs:
+    bins[i % nColumns].push(child)
+
+  <React.Fragment>
+    {...for idx i, elem bin in bins:
+      <div key={i} style={{
+        display: 'flex'
+        flexDirection: 'column'
+        width: columnWidth
+        flex: columnFlex
+        boxSizing: 'border-box'
+      }}>
+        {bin}
+      </div>
+    }
+  </React.Fragment>
+
+PexelsAttribution() ->
+  <HCentered style={{marginBottom: 8}}>
+    <Link href="https://pexels.com" target="new">Photos by Pexels</Link>
+  </HCentered>
+
+export PexelsContent({location}) ->
+  navData = useNavigationData(location)
+  [ search, setSearch, searchHandle ] = useSharedState(navData.search or '')
+  navData.search = search // sync navdata with user entry
+  [ content, loading, error ] = usePexelsQuery({query: search})
+  isMobile = useIsMobile()
+  navigate = useNavigate()
+  nColumns = if isMobile: 2 else: 4
+
+  useTopBarWidget(-> <ContentNavbarWidget searchHandle={searchHandle} />)
+
+  onContentItemClicked(item): void ->
+    if not WorkContext.runHook('onChooseContent', item):
+      navigate(`/main/content/view`, { state: { contentItem: item } })
+
+  <VerticalScrollArea>
+    { if content.length > 0:
+      <PexelsAttribution />
+    }
+    <div style={{
+      display: 'flex'
+      flexWrap: 'wrap'
+    }}>
+      {
+        if not search:
+          <ErrorCardContainer>
+            <ErrorCard
+              Icon={SearchIcon}
+              title="Search for Stock Photos"
+              body="Enter a search in the bar above to get started."
+            />
+          </ErrorCardContainer>
+      }
+      {
+        if search and (not loading) and (not error) and (content.length == 0):
+          <ErrorCardContainer>
+            <ErrorCard
+              Icon={NotFoundIcon}
+              title="No Results"
+              body="No search results were found. Try another search."
+            />
+          </ErrorCardContainer>
+      }
+      {if content.length > 0:
+        <ContentColumns nColumns={nColumns}>
+          {...for idx i, elem c in content:
+            <div key={i} style={{ width: '100%', paddingLeft: '2px', paddingRight: '2px', paddingBottom: '2px', boxSizing: 'border-box' }} onClick={-> onContentItemClicked(c) }>
+              <img style={{width: '100%'}} src={c.media[0].thumbUrl} />
+            </div>
+          }
+        </ContentColumns>
+      }
+    </div>
+  </VerticalScrollArea>

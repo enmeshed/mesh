@@ -1,0 +1,17 @@
+import { AppState } from 'App/Data/AppState'
+
+// Global navigation data
+navData = {}
+
+export useNavigationData(location) ->
+  let data = navData[location.pathname]
+
+  // If data already exists, return it
+  if data:
+    if data.stackDepth == AppState.historyStackDepth:
+      return data
+
+  now data = (navData[location.pathname] = {})
+  data.stackDepth = AppState.historyStackDepth
+
+  data

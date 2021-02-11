@@ -4,14 +4,16 @@ import { Router, Redirect } from '@reach/router'
 import { NotFound } from '../../NotFound'
 import { Disabled } from '../../Disabled'
 
-import { Content } from './Content'
-import { ManageContent } from './ContentManagement'
+import { Content, PexelsContent } from './Content'
+import { ManageContent, ViewContent } from './ContentManagement'
 
 export ContentRouter() ->
   <Router primary={false} component={React.Fragment}>
     <Content path="primary/*" />
+    <PexelsContent path="stock_photos/*" />
     <ManageContent path="create" />
     <ManageContent path="edit/:itemId" />
+    <ViewContent path="view" />
     <Redirect noThrow from="/" to="primary" />
     <NotFound default />
   </Router>

@@ -1,0 +1,43 @@
+import React from 'react'
+
+import { useStyletron } from 'baseui'
+import { Card, StyledBody as CardBody, StyledTitle as CardTitle, StyledAction as CardAction } from 'baseui/card'
+import { Button } from 'baseui/button'
+
+import { HCentered, Centered, StickyTop } from 'App/Layout'
+
+export ErrorCard({
+  Icon
+  title
+  body
+  children
+}) ->
+  [css, theme] = useStyletron()
+  <Card overrides={{Root: { style: { width: "384px", maxWidth: "95vw" } } }}>
+    {if Icon:
+      <HCentered>
+        <Icon size={128} color={theme.colors.contentInverseSecondary} />
+      </HCentered>
+    }
+    {if title:
+      <HCentered>
+        <CardTitle>
+          {title}
+        </CardTitle>
+      </HCentered>
+    }
+    {if body:
+      <HCentered>
+        <CardBody>
+          {body}
+        </CardBody>
+      </HCentered>
+    }
+    {children}
+  </Card>
+
+export ErrorCardContainer({children}) ->
+  [css, theme] = useStyletron()
+  <HCentered style={{marginTop: theme.sizing.scale600}}>
+    {children}
+  </HCentered>

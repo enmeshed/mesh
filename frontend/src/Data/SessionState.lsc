@@ -1,0 +1,117 @@
+import { entity, field, types, Entity } from '@ormojo/ephraim'
+import { KvStore } from './KvStore'
+import { EventStore } from './EventStore'
+import { PostStore } from './PostStore'
+
+{ moment } = require('globalthis')()
+
+calMocks = [
+  {
+    id: "cal_1"
+    name: "Master Calendar"
+    zone: "America/Phoenix"
+    master: true
+  }
+  {
+    id: "cal_2"
+    name: "Second Calendar"
+    zone: "America/Phoenix"
+  }
+]
+
+saMocks = [
+  {
+    id: "sa_1"
+    medium: "twitter"
+    username: "@SimplibuzzTech"
+  }
+  {
+    id: "sa_2"
+    medium: "facebook"
+    subtype: "page"
+    username: "SimpliBuzz Tech"
+  }
+]
+
+postMocks = [
+  {
+    id: "post_1"
+    calendarId: "cal_1"
+    scheduledAt: moment("2021-01-20 17:00").unix()
+    targets: [{
+      id: "sa_1"
+      medium: "twitter"
+      username: "@SimplibuzzTech"
+    }]
+    content: "Test post Jan 20 5pm"
+  }
+  {
+    id: "post_2"
+    calendarId: "cal_1"
+    scheduledAt: moment("2021-01-15 09:30").unix()
+    targets: [{
+      id: "sa_1"
+      medium: "twitter"
+      username: "@SimplibuzzTech"
+    }]
+    content: "John 3:16"
+  }
+  {
+    id: "post_3"
+    calendarId: "cal_1"
+    scheduledAt: moment("2021-01-16 12:30").unix()
+    targets: [{
+      id: "sa_1"
+      medium: "twitter"
+      username: "@SimplibuzzTech"
+    }]
+    content: "Welcome to SimpliBuzz 2.0"
+  }
+  {
+    id: "post_4"
+    calendarId: "cal_1"
+    scheduledAt: moment("2021-01-16 17:00").unix()
+    targets: [{
+      id: "sa_1"
+      medium: "twitter"
+      username: "@SimplibuzzTech"
+    }]
+    content: "Test post Jan 16"
+  }
+]
+
+eventMocks = [
+  {
+    id: "event_1"
+    time: moment("2021-01-20 00:01").unix()
+    type: "notice"
+    summary: "FB login expires"
+    detail: "Your Facebook login credentials will expire on this day. Please renew them before then to ensure that your Facebook posts go out as scheduled."
+    warning: true
+  }
+]
+
+@entity({name: 'SessionState'}) class SessionState extends Entity {
+  _init() ->
+    this.accessibleCalendars.idPrefix = 'cal_'
+    this.accessibleCalendars.set(calMocks)
+    this.accessibleAccounts.idPrefix = 'sa_'
+    this.accessibleAccounts.set(saMocks)
+    this.posts.events = this.events
+    this.posts.set(postMocks)
+    this.events.set(eventMocks)
+
+  // Calendars accessible by the user
+  @field(KvStore) accessibleCalendars = {}
+  // Calendar ID of the currently active calendar
+  @field(types.string) activeCalendar = 'cal_1'
+  // SocialAccounts accessible by the user
+  @field(KvStore) accessibleAccounts = {}
+  // Posts cache
+  @field(PostStore) posts = {}
+  // Calendar events cache
+  @field(EventStore) events = {}
+
+}
+
+export { SessionState }

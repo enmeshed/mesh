@@ -1,38 +1,90 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Select } from "baseui/select"
 import { useNavigate } from '@reach/router'
 
 import { useCalendars } from 'App/Data/useCalendars'
+import { useObservableField } from 'App/Data/useObservable'
+import { AppState } from 'App/Data/AppState'
 
-export CalendarSelect({allowManage}) ->
-  [ calendarData ] = useCalendars()
-  calendarOpts = [
-    ...for elem cal in calendarData:[
-      { label: cal.name, id: cal.id }
-    ]
-    ...if allowManage: [{ label: 'Manage Calendars...', id: '0', manage: true }]
+manageOpt = { label: 'Manage Calendars...', id: '0', manage: true }
+
+
+defaultCreateOptions = (cals) ->
+  [...for elem cal in cals:
+    [{label: cal.name, id: cal.id}]
   ]
-  [ calOpt, setCalOpt ] = useState([ calendarOpts[0] ])
-  navigate = useNavigate()
 
-  setCalendar(value) ->
-    if value?[0]?.manage:
-      navigate('/main/settings/calendars')
-    else:
-      setCalOpt(value)
+defaultFindActiveOption = (options, value) ->
+  opt = options.find(option -> (option?.id == value))
+  opt or options[0] or [{label: "(unknown)", id: ''}]
+
+defaultDescribeOption = (value) -> value?[0].id
+
+// General calendar selector
+export CalendarSelect({
+  disabled
+  createOptions = defaultCreateOptions
+  findActiveOption = defaultFindActiveOption
+  describeOption = defaultDescribeOption
+  value
+  onChange
+  ...restProps
+}) ->
+  [ calendarData, loading ] = useCalendars()
+  now disabled = disabled or loading
+
+  options = createOptions(calendarData)
+  activeOption = findActiveOption(options, value)
 
   <Select
-    overrides={{
-      Root: {
-        style: {
-          maxWidth: '250px'
-        }
-      }
-    }}
     searchable={false}
     clearable={false}
+    options={ options }
+    value={ [activeOption] }
+    onChange={ ({value}) -> onChange(describeOption(value)) }
+    disabled={disabled}
+    {...restProps}
+  />
+
+
+// Change the active calendar
+export ActiveCalendarSelect({allowManage, ...restProps}) ->
+  navigate = useNavigate()
+
+  // Observe active and possible calendars
+  activeCalId = useObservableField(AppState.sessionState, "activeCalendar")
+
+  // Create calendar select list
+  createOptions(calendars) ->
+    [
+      ...for elem cal in calendars:
+        [{label: cal.name, id: cal.id, master: cal.master}]
+      ...if allowManage: [ manageOpt ]
+    ]
+
+  // Determine active calendar
+  findActiveOption(options, id) ->
+    let masterCalOpt = null
+    for elem option in options:
+      if option.id == activeCalId: return option
+      if option.master: now masterCalOpt = option
+
+    masterCalOpt or [{label: "(unknown)", id: ''}]
+
+  describeOption(value) -> value?[0]
+
+  setCalendar(selectedOption) ->
+    if selectedOption?.manage:
+      navigate('/main/settings/calendars')
+    else if selectedOption?.id:
+      console.log("setting calendar id", selectedOption.id)
+      AppState.sessionState.activeCalendar = selectedOption.id
+
+  <CalendarSelect
     required
-    options={ calendarOpts }
-    value={ calOpt }
-    onChange={ ({value}) -> setCalendar(value) }
+    createOptions={createOptions}
+    findActiveOption={findActiveOption}
+    describeOption={describeOption}
+    onChange={ (value) -> setCalendar(value) }
+    {...restProps}
   />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import { styled } from 'baseui'
 
 getSvgStyles({$theme, $size, $color}) ->
@@ -23,9 +23,9 @@ getSvgStyles({$theme, $size, $color}) ->
   }
 
   return {
-    display: 'inline-block',
-    height: size,
-    width: size,
+    display: 'inline-block'
+    height: size
+    width: size
   };
 
 Svg = styled('svg', getSvgStyles)
@@ -46,7 +46,7 @@ FwdIconBase = React.forwardRef(IconBase)
 export default FwdIconBase
 
 export makeIcon(defaultTitle, path, opts={}) ->
-  viewBox = opts.viewBox or "0 0  24 24"
+  viewBox = opts.viewBox or "0 0 24 24"
   fill = opts.fill or "none"
   stroke = opts.stroke or "currentColor"
 

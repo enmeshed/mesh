@@ -1,0 +1,27 @@
+import { entity, field, Entity, types } from '@ormojo/ephraim'
+import { KvStore } from './KvStore'
+
+@entity({name: 'EventStore'}) class EventStore extends KvStore:
+  idPrefix = 'event'
+
+  matches(post, query) ->
+    if query.calendarId~looseNotEq(null):
+      if query.calendarId != 'all' and post.calendarId~looseNotEq(null) and (query.calendarId != post.calendarId):
+        return false
+
+    if query.before~looseNotEq(null):
+      if post.scheduledAt > query.before: return false
+
+    if query.after~looseNotEq(null):
+      if post.scheduledAt < query.after: return false
+
+    true
+
+  query(query = {}) -/>
+    [...for key k, val v in this.store:
+      if this.matches(v, query):
+        [v]
+    ]
+
+
+export { EventStore }

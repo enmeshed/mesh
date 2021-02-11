@@ -1,19 +1,56 @@
-import React from 'react'
-import { Router, Redirect } from '@reach/router'
+import React, { useState, useEffect } from 'react'
+import { useStyletron } from 'baseui'
+import { Router, Redirect, useNavigate } from '@reach/router'
+
+import { Input } from 'baseui/input'
+import { FormControl } from 'baseui/form-control'
+import { Button } from 'baseui/button'
+import { TimezonePicker } from 'baseui/timezonepicker'
+import { StatefulTooltip } from "baseui/tooltip"
 
 import { useCalendars } from 'App/Data/useCalendars'
+import { useTopBarWidget, useBackButton } from 'App/Util/useTopBarWidget'
+import { AppState } from 'App/Data/AppState'
+import { useStoreItem, useWritableStore } from 'App/Data/useStore'
 
 import { ThemedNavigation, Link } from 'App/Util/ThemedNavigation'
 import { SubmenuTitle } from 'App/Util/Labels'
+import { ResponsiveIconButton } from 'App/Util/Buttons'
+import { FormSection, FormControlGroup, FormScreen, FormActionButtons } from 'App/Util/Forms'
+import { SocialAccountSelect } from 'App/Util/SocialAccountSelect'
+
+import PlusIcon from 'baseui/icon/plus'
+import TipIcon from 'App/Icons/questionCircle'
+
+{ moment } = require('globalthis')()
 
 export CalendarSettings() ->
   <Router primary={false} component={React.Fragment}>
+    <CreateCalendar path="create" />
     <EditCalendar path=":id" />
     <CalendarList default />
   </Router>
 
+export CalendarListNavbarWidget() ->
+  [ css, theme ] = useStyletron()
+  navigate = useNavigate()
+
+  onCreateCalendar() ->
+    navigate("/main/settings/calendars/create")
+
+  <div className={css({
+    display: 'flex'
+    alignItems: 'center'
+  })}>
+    <div style={{flex: 1}} />
+    <ResponsiveIconButton Icon={PlusIcon} label="Create" onClick={onCreateCalendar} />
+  </div>
+
 export CalendarList() ->
   [calendars, loading] = useCalendars()
+  useTopBarWidget(-> <CalendarListNavbarWidget />)
+  useBackButton(-1)
+
   items = [
     ...for elem { id, name } in calendars:
       [{
@@ -24,6 +61,115 @@ export CalendarList() ->
   <ThemedNavigation dividers prefix="main/settings/calendars" items={items} />
 
 export EditCalendar({id}) ->
-  <div>
-    Edit calendar {id}
-  </div>
+  <FormScreen>
+    <CalendarForm editCalendarId={id} />
+  </FormScreen>
+
+export CreateCalendar() ->
+  <FormScreen>
+    <CalendarForm />
+  </FormScreen>
+
+TooltipTitle({children, tip}) ->
+  <span style={{
+    display: 'inline-flex'
+    alignItems: 'center'
+  }}>
+    {children}
+    <StatefulTooltip
+      accessibilityType="tooltip"
+      content={tip}
+    >
+      <TipIcon size={24} style={{marginLeft: '8px'}} title={null} />
+    </StatefulTooltip>
+  </span>
+
+
+CalendarForm({editCalendarId}) ->
+  navigate = useNavigate()
+  [ name, setName ] = useState('')
+  [ zone, setZone ] = useState(moment.tz.guess())
+  [ defaultTargets, setDefaultTargets ] = useState([])
+  [ allowedTargets, setAllowedTargets ] = useState([])
+
+  calStore = AppState.sessionState.accessibleCalendars
+
+  // Prime the form with calendar data if an ID is provided
+  [cal, loading] = useStoreItem(calStore, editCalendarId, { once: true })
+  loadCalEffect(): void ->
+    if cal:
+      setName(cal.name)
+      setZone(cal.zone)
+      setDefaultTargets(cal.defaultTargets or [])
+      setAllowedTargets(cal.allowedTargets or [])
+  useEffect(loadCalEffect, [cal])
+
+  [ write, saving ] = useWritableStore(calStore)
+  onSave(): void -/>
+    saveCal = {
+      id: editCalendarId
+      name
+      zone
+      defaultTargets
+      allowedTargets
+    }
+
+    <- write([saveCal])
+    navigate(-1)
+
+  onCancel(): void ->
+    navigate(-1)
+
+  // Disable the form when data is loading or saving
+  disableForm = loading or saving
+
+  <React.Fragment>
+    <FormSection title="Calendar">
+      <FormControl label="Name">
+        <Input
+          value={name}
+          disabled={disableForm or (cal?.master)}
+          onChange={(ev) -> setName(ev.target.value)}
+          placeholder="Calendar name..."
+        />
+      </FormControl>
+      <FormControl label="Timezone">
+        <TimezonePicker
+          value={zone}
+          onChange={ (zone) ->
+            setZone(zone.id) }
+        />
+      </FormControl>
+    </FormSection>
+    <FormSection title="Social Accounts">
+      <FormControl label={
+        <TooltipTitle tip={-> "These accounts will be targeted by default whenever you post to this calendar. This field is optional; leaving it blank will result in no default accounts."}>
+          Default Targets
+        </TooltipTitle>
+      }>
+        <SocialAccountSelect
+          placeholder="Choose target accounts..."
+          targets={defaultTargets}
+          setTargets={setDefaultTargets}
+        />
+      </FormControl>
+      <FormControl label={
+        <TooltipTitle tip={-> "Only these accounts will be allowed as targets when posting to this calendar. This field is optional; leaving it blank will result in all accounts being allowed."}>
+          Allowed Targets
+        </TooltipTitle>
+      }>
+        <SocialAccountSelect
+          placeholder="Choose target accounts..."
+          targets={allowedTargets}
+          setTargets={setAllowedTargets}
+        />
+      </FormControl>
+    </FormSection>
+    <FormActionButtons>
+      <Button disabled={disableForm} onClick={onSave}>Save</Button>
+      { if editCalendarId:
+        <Button disabled={disableForm or cal?.master}>Delete</Button>
+      }
+      <Button disabled={disableForm} kind="secondary" onClick={onCancel}>Cancel</Button>
+    </FormActionButtons>
+  </React.Fragment>

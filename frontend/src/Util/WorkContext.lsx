@@ -6,6 +6,49 @@ import { navigate } from 'App/Util/createHistory'
 
 import { AppState } from 'App/Data/AppState'
 
+export class WorkContext:
+  constructor(opts) ->
+    Object.assign(this, opts)
+    this.initialHistoryStackDepth = AppState.historyStackDepth
+    this.hooks = if this.hooks: this.hooks else: {}
+
+  restore() ->
+    // Try to navigate using the stack
+    stackDiff = this.initialHistoryStackDepth - AppState.historyStackDepth
+    if stackDiff < 0:
+      console.log("workContext: navigating with stack: pop", stackDiff)
+      navigate(stackDiff)
+    elif this.returnTo:
+      navigate(this.returnTo)
+
+  getDescription(): string ->
+    this.contextDescription or ''
+
+  // Run a hook if available, returning true if a hook was run
+  runHook(hookName, data): boolean ->
+    hook = this.hooks[hookName]
+    if hook:
+      hook(this, data)
+      true
+    else:
+      false
+
+  static set(ctx: WorkContext): void ->
+    AppState.uxState.setWorkContext(ctx)
+
+  static current(): WorkContext ->
+    AppState.uxState.workContext or {}
+
+  static runHook(hookName, data): boolean ->
+    ctx = this.current()
+    if ctx instanceof WorkContext:
+      ctx.runHook(hookName, data)
+    else:
+      false
+
+
+
+
 export watchWorkContexts(ctx) ->
   let toastKey = null
 
@@ -21,19 +64,11 @@ export watchWorkContexts(ctx) ->
       // Pop a new toast
       if ctxVal:
         onBack() ->
-          // First try to navigate using the stack
-          stackDiff = ctxVal.initialHistoryStackDepth - AppState.historyStackDepth
-          if stackDiff < 0:
-            console.log("workContext navigating with stackDiff", stackDiff)
-            navigate(stackDiff)
-          elif ctxVal.returnTo:
-            // Generic exit route if stack fails
-            navigate(ctxVal.returnTo)
-          AppState.uxState.setWorkContext(null)
+          ctxVal.restore()
 
         now toastKey = toaster.show(
           <div style={{display: 'flex', alignItems:'center', width: '100%'}}>
-            {ctxVal.contextDescription}
+            {ctxVal.getDescription()}
             <div style={{flex: 1}} />
             <Button onClick={onBack} size="compact">Back</Button>
           </div>

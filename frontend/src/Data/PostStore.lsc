@@ -1,0 +1,30 @@
+import { entity, field, Entity, types } from '@ormojo/ephraim'
+import { KvStore } from 'App/Data/KvStore'
+
+// Post store; for every Post created, automatically create an associated
+// calendar Event.
+@entity({name: 'PostStore'}) class PostStore extends KvStore:
+  idPrefix = 'post'
+
+  delete(id): boolean -/>
+    result <- super.delete(id)
+    if result:
+      this.events.delete(id)
+    else:
+      false
+
+  set(entities): void -/>
+    <- super.set(entities)
+    setEvents = [...for elem entity in entities:
+      [{
+        id: entity.id
+        calendarId: entity.calendarId
+        type: 'post'
+        time: entity.scheduledAt
+        dayEvent: false
+        post: entity
+      }]
+    ]
+    <- this.events.set(setEvents)
+
+export { PostStore }

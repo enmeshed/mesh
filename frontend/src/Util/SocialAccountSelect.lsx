@@ -1,0 +1,28 @@
+// Control for selecting one or more social accounts
+import React from 'react'
+import { Select } from 'baseui/select'
+
+import { SocialAccountTag, getSocialAccountSelectLabel, getSocialAccountTagLabel } from 'App/Util/SocialAccountDisplay'
+import { useSocialAccounts } from 'App/Data/useSocialAccounts'
+
+export SocialAccountSelect({targets, setTargets, ...restProps}) ->
+  [sas] = useSocialAccounts()
+  validTargets = [...for elem sa in sas:
+    [{ id: sa.id, medium: sa.medium, username: sa.username }]
+  ]
+
+  <Select
+    options={validTargets}
+    value={targets}
+    labelKey="label"
+    valueKey="id"
+    multi
+    onChange={ (params) -> setTargets(params.value) }
+    clearable searchable
+    getOptionLabel={getSocialAccountSelectLabel}
+    getValueLabel={getSocialAccountTagLabel}
+    overrides={{
+      Tag: SocialAccountTag
+    }}
+    {...restProps}
+  />

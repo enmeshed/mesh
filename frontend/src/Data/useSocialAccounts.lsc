@@ -1,0 +1,9 @@
+import { AppState } from './AppState'
+import { useStoreQuery } from './useStore'
+
+// [ data, loading, errors ]
+export useSocialAccounts() ->
+  saStore = AppState.sessionState.accessibleAccounts
+  [ value, setQuery, loading, error ] = useStoreQuery(saStore, {})
+
+  [ value or [], loading, error ]

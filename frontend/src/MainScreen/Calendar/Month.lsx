@@ -14,7 +14,7 @@ import { ButtonGroup } from 'baseui/button-group'
 import { Block } from 'baseui/block'
 import { StyledUserMenuButton as UserButton } from 'baseui/app-nav-bar'
 
-import { CalendarSelect } from './CalendarSelect'
+import { ActiveCalendarSelect } from './CalendarSelect'
 
 import ChevronLeft from "baseui/icon/chevron-left"
 import ChevronRight from "baseui/icon/chevron-right"
@@ -287,11 +287,12 @@ MonthBody({small, zone, yearNumber, monthNumber}) ->
 
 // Month controller
 export Month({year, month}) ->
+  yearNumber = +year
+  monthNumber = (+month)-1
+
   [ css ] = useStyletron()
   small = useIsMobile()
 
-  yearNumber = +year
-  monthNumber = (+month)-1
   zone = null
 
   dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
@@ -356,12 +357,14 @@ MonthNavbarWidget({dayInMonth, zone}) ->
     </Label1>
     <div className={css({flex: 1})} />
     { if not isMobile:
-      <CalendarSelect allowManage />
+      <div className={css({width: '250px'})}>
+        <ActiveCalendarSelect allowManage allowAll />
+      </div>
     }
   </div>
 
 MobileExtraPopupContent() ->
   [css, theme] = useStyletron()
   <Block style={{boxSizing: 'border-box'}} padding={theme.sizing.scale600} width="250px" backgroundColor="backgroundPrimary">
-    <CalendarSelect allowManage />
+    <ActiveCalendarSelect allowManage allowAll />
   </Block>

@@ -9,7 +9,11 @@ globalThis = require('globalthis')()
 
   // This React element will be displayed in the top navigation bar.
   @field(types.any) injectedTopBarControl = null
-  setTopBarWidget(widget): void -> this.injectedTopBarControl = widget
+  setTopBarWidget(widget): void ->
+    if this.injectedTopBarControl == widget:
+      console.log("Injected identical topbar control, ignoring")
+    else:
+      this.injectedTopBarControl = widget
   clearTopBarWidget(widget): void ->
     if this.injectedTopBarControl == widget:
       this.injectedTopBarControl = null
@@ -47,9 +51,6 @@ globalThis = require('globalthis')()
   // that content to the Post.)
   @field(types.any) workContext = null
   setWorkContext(ctx): void ->
-    this.workContext = ctx
-  saveWorkContext(ctx = {}): void ->
-    ctx.initialHistoryStackDepth = globalThis.appState.historyStackDepth
     this.workContext = ctx
 
 

@@ -1,0 +1,40 @@
+import { entity, field, Entity, types } from '@ormojo/ephraim'
+import cuid from 'cuid'
+
+@entity({name: 'KvStore'}) class KvStore extends Entity:
+  @field(types.json) store = {}
+
+  idPrefix = ''
+
+  delete(id): boolean -/>
+    last = this.store[id]
+    if not last:
+      return false
+    nextStore = Object.assign({}, this.store)
+    delete nextStore[id]
+    this.store = nextStore
+    true
+
+  set(entities): void -/>
+    assignment = {...for elem entity in entities:
+      if not entity.id: entity.id = this.idPrefix + cuid()
+      { [entity.id]: entity }
+    }
+    nextStore = Object.assign({}, this.store, assignment)
+    this.store = nextStore
+
+  get(id) -/>
+    this.store[id or '']
+
+  getCached(id) ->
+    this.store[id or '']
+
+  query(query) -/>
+    // By default, return all entries
+    [...for key k, val v in this.store:
+      [v]
+    ]
+
+
+
+export { KvStore }
