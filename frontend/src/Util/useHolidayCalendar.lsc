@@ -14,3 +14,6 @@ export useHolidayCalendar(ymd) ->
 
 export useHolidaysBetween(unixStart, unixEnd) ->
   holidayCalendar.getEventsBetween(unixStart, unixEnd)
+
+export getHolidaysBetween(start, end) ->
+  holidayCalendar.getEventsBetween(start, end)

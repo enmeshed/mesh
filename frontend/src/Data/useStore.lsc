@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useObservable } from './useObservable'
 
 // Use a single item from a Store, given by the item's id
 export useStoreItem(store, id, opts = {}) ->
@@ -49,27 +50,34 @@ export useStoreItem(store, id, opts = {}) ->
 
 // Use a query from a Store
 export useStoreQuery(store, initialQuery, opts = {}) ->
-  [ value, setValue ] = useState(undefined)
+  [ value, setValue ] = useState([])
   [ loading, setLoading ] = useState(true)
   [ error, setError ] = useState(null)
-  [ query, setQuery ] = useState(initialQuery)
+  [ query, setQueryInternal ] = useState(initialQuery)
+  storeBase = useObservable(-> store.getGlobalObservable(), {})
+
+  setQuery(nextQuery): void ->
+    setValue([])
+    setQueryInternal(nextQuery)
 
   doQuery(): void -/>
     try:
       setError(null)
       setLoading(true)
       nextValue <- store.query(query)
+      if opts.debug: console.log("useStoreQuery value updating", nextValue)
       setValue(nextValue)
     catch err:
-      setValue(undefined)
+      setValue([])
       setError(err)
     finally:
       setLoading(false)
 
-  changedQueryEffect(): void ->
+  changedStoreEffect(): void ->
+    if opts.debug: console.log("useStoreQuery changedStoreEffect", storeBase)
     doQuery().catch(err -> setError(err))
 
-  useEffect(changedQueryEffect, [query])
+  useEffect(changedStoreEffect, [query, storeBase])
 
   [ value, setQuery, loading, error ]
 

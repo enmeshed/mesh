@@ -1,5 +1,6 @@
 import { entity, field, Entity, types } from '@ormojo/ephraim'
 import cuid from 'cuid'
+import { observeField } from './observeField'
 
 @entity({name: 'KvStore'}) class KvStore extends Entity:
   @field(types.json) store = {}
@@ -35,6 +36,7 @@ import cuid from 'cuid'
       [v]
     ]
 
-
+  getGlobalObservable() ->
+    observeField(this, "store")
 
 export { KvStore }

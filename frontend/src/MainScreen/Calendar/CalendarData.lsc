@@ -1,73 +1,28 @@
-import { useHolidaysBetween } from 'App/Util/useHolidayCalendar'
+import { useState, useEffect, useMemo } from 'react'
+import { getHolidaysBetween } from 'App/Util/useHolidayCalendar'
+import { useCalendarEvents } from 'App/Data/usePosts'
 
 { moment } = require('globalthis')()
-
-mocks = {
-  "2021-01-20": [
-    {
-      summary: "FB login expires"
-      detail: "Your Facebook login credentials will expire on this day. Please renew them before then to ensure that your Facebook posts go out as scheduled."
-      warning: true
-    }
-    {
-      post: true
-      timeOfDay: "17:00"
-      targets: [{
-        medium: "twitter"
-        accountName: "@SimplibuzzTech"
-      }]
-      content: "Test post Jan 20 5pm"
-    }
-  ]
-  "2021-01-15": [
-    {
-      post: true
-      timeOfDay: "09:30"
-      targets: [{
-        medium: "twitter"
-        accountName: "@SimplibuzzTech"
-      }]
-      content: "John 3:16"
-    }
-  ]
-  "2021-01-16": [
-    {
-      post: true
-      timeOfDay: "12:30"
-      targets: [{
-        medium: "twitter"
-        accountName: "@SimplibuzzTech"
-      }]
-      content: "Welcome to SimpliBuzz 2.0"
-    }
-    {
-      post: true
-      timeOfDay: "17:00"
-      targets: [{
-        medium: "twitter"
-        accountName: "@SimplibuzzTech"
-      }]
-      content: "Test post Jan 16"
-    }
-  ]
-}
 
 export useDayEvents(startMom) ->
   start = moment(startMom).startOf('day').unix()
   end = moment(startMom).endOf('day').unix()
+  [ allEvents ] = useEvents(start, end)
+  allEvents
 
-  holidays = useHolidaysBetween(start, end)
+// Use a collection of events from the given calendar
+export useEvents(startUnix, endUnix, calId = 'all') ->
+  // Get user calendar events for the day
+  [ pevents, loading, error ] = useCalendarEvents(startUnix, endUnix, calId, { debug: true })
 
-  key = startMom.format('YYYY-MM-DD')
-  mock = mocks[key] or []
+  // Combine user calendar events with holiday calendar data, memoize
+  allEvents = useMemo(
+    ->
+      hols = getHolidaysBetween(startUnix, endUnix)
+      all = hols.concat(pevents)
+      console.log("computing memoized events", startUnix, endUnix)
+      all
+    [ startUnix, endUnix, pevents ]
+  )
 
-  for elem mockery in mock:
-    if mockery.timeOfDay:
-      v = `${key} ${mockery.timeOfDay}`
-      mockery.scheduledAt = moment(v)
-
-  evs = holidays.concat(mock)
-
-  console.log("day", key, "start", start, "end", end, "evs", evs)
-
-  evs
+  [ allEvents, loading, error ]

@@ -1,5 +1,6 @@
 import { AppState } from './AppState'
 import { useStoreQuery } from './useStore'
+import { useEffect } from 'react'
 
 // Returns [ posts, loading, error ]
 export usePosts() ->
@@ -7,3 +8,21 @@ export usePosts() ->
   [ value, setQuery, loading, error ] = useStoreQuery(postStore, {})
 
   [ value or [], loading, error ]
+
+export useCalendarEvents(start, end, calendarId, opts = {}) ->
+  now calendarId = calendarId or 'all'
+  eventStore = AppState.sessionState.events
+
+  makeQuery() -> {
+    after: start
+    before: end
+    calendarId
+  }
+
+  [ value, setQuery, loading, error ] = useStoreQuery(eventStore, makeQuery(), opts)
+  queryChangeEffect(): void ->
+    if opts.debug: console.log("useCalendarEvents.queryChangeEffect", start, end, calendarId)
+    setQuery(makeQuery())
+  useEffect(queryChangeEffect, [ start, end, calendarId ])
+
+  [ value, loading, error ]

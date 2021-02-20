@@ -6,7 +6,8 @@ import { toBorderString } from '../../util'
 import { momentForZone } from '../../Util/momentForZone'
 import { useTopBarWidget, useExtraMenu } from '../../Util/useTopBarWidget'
 import { useIsMobile, StickyTop, VerticalScrollArea } from '../../Layout'
-import { useDayEvents } from './CalendarData'
+import { useEvents } from './CalendarData'
+import { useActiveCalendar } from 'App/Data/useCalendars'
 import { BinPacker } from './BinPacker'
 
 import { Label1, Label2, Label3, Label4, Paragraph3, Paragraph2 } from 'baseui/typography'
@@ -37,9 +38,14 @@ GutterEntry({small, date}) ->
   else:
     ['50px', '70px', date.format("h A")]
 
+  bottomHalf = moment(date).add(30, 'minutes')
+
   onClick(ev) ->
     ev.preventDefault()
-    navigate("/main/post")
+    navigate("/main/post", { state: { date: date.toISOString(true), time: date.toISOString(true) } })
+  onClickBottom(ev) ->
+    ev.preventDefault()
+    navigate("/main/post", { state: { date: bottomHalf.toISOString(true), time: bottomHalf.toISOString(true) } })
 
   <div className={css({
     position: 'relative'
@@ -51,7 +57,7 @@ GutterEntry({small, date}) ->
     boxSizing: 'border-box'
   })}>
     <div className={css({flex: "1 0 50%"})} onClick={onClick} />
-    <div className={css({flex: "1 0 50%"})} onClick={onClick} />
+    <div className={css({flex: "1 0 50%"})} onClick={onClickBottom} />
     <div className={css({
       position: 'absolute'
       height
@@ -124,7 +130,7 @@ Grid({start, end, small, columns}) ->
 
 EventBubble({event}) ->
   [ css, theme ] = useStyletron()
-  { event: post } = event
+  { event: { post: post } } = event
   <div style={{
     position: 'absolute'
     top: event.slot * 25
@@ -140,7 +146,7 @@ EventBubble({event}) ->
   }}>
     <div>
       <Label2 as="span">Post</Label2>&nbsp;
-      <Paragraph2 as="span">to {post.targets[0].accountName}:</Paragraph2>
+      <Paragraph2 as="span">to {post.targets[0].username}:</Paragraph2>
     </div>
     <Paragraph3 as="span">{post.content}</Paragraph3>
   </div>
@@ -200,11 +206,12 @@ HeaderEvent({event}) ->
 export Day({year, month, day}) ->
   [ css ] = useStyletron()
   small = useIsMobile()
+  [ activeCalendar ] = useActiveCalendar()
 
   yearNumber = +year
   monthNumber = (+month)-1
   dayNumber = +day
-  zone = null
+  zone = activeCalendar?.zone
 
   date = momentForZone(zone).year(yearNumber).month(monthNumber).date(dayNumber)
   start = moment(date).startOf('day')
@@ -214,17 +221,30 @@ export Day({year, month, day}) ->
   useExtraMenu(-> <MobileExtraPopupContent />)
 
   // Event processing (TODO: make this sane)
-  events = useDayEvents(start)
-  posts = events.filter(x -> x.post)
-  console.log("posts", posts)
-  posts.sort((a,b) -> a.scheduledAt.valueOf() - b.scheduledAt.valueOf())
-  packer = new BinPacker(start, end, 30)
-  packer.packSortedEvents(posts, (post) -> momentForZone(zone, post.scheduledAt))
+  [events, loading, error] = useEvents(
+    start.unix()
+    end.unix()
+    if (not activeCalendar) or  (activeCalendar.master):
+      'all'
+    else:
+      activeCalendar.id
+  )
+
+  binPacker = useMemo(
+    ->
+      posts = events.filter(x -> x.post)
+      console.log("posts dv", posts)
+      posts.sort((a,b) -> a.time - b.time)
+      packer = new BinPacker(start, end, 30)
+      packer.packSortedEvents(posts, (post) -> momentForZone(zone, post.time * 1000))
+      packer
+    [events]
+  )
 
   <StickyTop>
     <Header date={date} events={events} />
     <VerticalScrollArea style={{display: 'flex', flexDirection: 'column'}}>
-      <Grid start={start} end={end} small={small} columns={packer.getColumns()} />
+      <Grid start={start} end={end} small={small} columns={binPacker.getColumns()} />
     </VerticalScrollArea>
   </StickyTop>
 
@@ -238,7 +258,7 @@ DayNavbarWidget({day, zone}) ->
 
   prevMo = moment(day).subtract(1, 'days')
   nextMo = moment(day).add(1, 'days')
-  thisMo = momentForZone(zone)
+  t0 = momentForZone(zone)
 
   makeLink(mo) ->
     (ev): void ->
@@ -247,10 +267,10 @@ DayNavbarWidget({day, zone}) ->
 
   toPrev = makeLink(prevMo)
   toNext = makeLink(nextMo)
-  toNow = makeLink(thisMo)
+  toNow = makeLink(t0)
   toMonth(ev): void ->
     ev.preventDefault()
-    navigate(`/main/calendar/${thisMo.format('YYYY')}/${thisMo.format('MM')}`)
+    navigate(`/main/calendar/${day.format('YYYY')}/${day.format('MM')}`)
 
   toPost(ev): void ->
     ev.preventDefault()

@@ -1,0 +1,114 @@
+// Given a form descriptor, create a form state and reducer object
+//
+// Engineering concerns:
+//
+// - Support both synchronous and asynchronous initializers
+// - When an async process is running, disable the form
+// - Support validation as-you-type, validation on blur, and validation on submit
+// - Pickle and unpickle form state to plain JSON for passing around
+// - Per-field and global form disable. Validation on blur disables only the
+//  field being validated. Most async operations disable the whole form.
+import { useRef, useReducer } from 'react'
+
+export class Form {
+  // Internally set the Reducer state each time it's updated
+  _setReducer(state, dispatch): void ->
+    this._state = state
+    this._dispatch = dispatch
+
+  // Disable/enable form fields
+  setDisabled(field, val): void ->
+    // TODO
+    return
+
+  // Set a form field value without triggering any validations or side
+  // effects.
+  rawSet(key, value): void ->
+    this._dispatch({type: 'setValues', payload: {[key]: value}})
+
+  // Set multiple form values
+  rawAssign(payload): void ->
+    this._dispatch({type: 'setValues', payload})
+
+  // Get the value for a key
+  get(key) ->
+    this._state?.values[key]
+
+  // Get the current form values object
+  getValues() ->
+    this._state?.values or {}
+
+  // Pickle the form into a plain JSON object
+  pickle() ->
+    Object.assign({}, this.getValues())
+
+  // Unpickle a JSON object previously returned by pickle.
+  unpickle(values): void ->
+    this.rawAssign(values)
+
+  // Get the initial values for a blank form
+  getBlankValues() -> {}
+
+  // Initialize the form. This is called as a side effect and may be an
+  // asynchronous method, in which case the form will be disabled while
+  // it is awaited.
+  initialize(initialInput) -> return
+
+}
+
+// TODO: move this to doc
+stateShape() ->
+  {
+    // Whether certain pieces of the form should be disabled, e.g. while
+    // performing an async operation
+    disabled: {
+      // Is the form disabled outright?
+      global: false
+      // Should a particular field be disabled?
+      fields: {}
+    }
+    // Validation state
+    validation: {
+      // When a field has no pending validation errors, there is no entry
+      // here
+      validField: null
+      // When a field is invalid, this will be the Error thrown from the
+      // validator
+      invalidField: new Error("invalid")
+    }
+    // Form field values
+    values: {
+      // Each field stores an arbitrary value here
+      validField: 'field value'
+    }
+  }
+
+formReducer(state, action) ->
+  match action.type:
+    | 'merge':
+      key = action.payload.key
+      {
+        ...state
+        [key]: {
+          ...state[key]
+          ...action.payload.values
+        }
+      }
+    | 'setValues': // legacy, special case of merge
+      {
+        ...state
+        values: {
+          ...state.values
+          ...action.payload
+        }
+      }
+    | else:
+      state
+
+export useFormState(controllerClass, initialInput) ->
+  // Locate the controller object for the form
+  controllerRef = useRef(null)
+  let { current: controller } = controllerRef
+  if not controller:
+    now controller = new controllerClass()
+    controllerRef.current = controller

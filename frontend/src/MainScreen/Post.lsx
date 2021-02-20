@@ -26,11 +26,36 @@ import TwitterIcon from 'App/Icons/twitter'
 
 { moment } = require('globalthis')()
 
+class PostForm extends Form:
+  // Stringify dates when pickling/unpickling
+  pickle() ->
+    pickled = super.pickle()
+    pickled.date = pickled.date.toString()
+    pickled.time = pickled.time.toString()
+    pickled
+
+  unpickle(values): void ->
+    if typeof(values.date) == 'string': values.date = new Date(values.date)
+    if typeof(values.time) == 'string': values.time = new Date(values.time)
+    super.unpickle(values)
+
+  getBlankValues() -> {
+    date: new Date()
+    time: new Date()
+    zone: moment.tz.guess()
+    text: ''
+    targets: []
+    image: {}
+  }
+
 dateFromContext(x) ->
   if x: new Date(x) else: null
 
 // Create the form state for posting. We use an effect to bootstrap the initial
-// state from either context or incoming location data.
+// state.
+//
+// There are 3 sources for the state; either a saved work context, a prepopulated
+// post coming from location state, or a post that we're editing.
 usePostState(location) ->
   [ date, setDate ] = React.useState(new Date())
   [ time, setTime ] = React.useState(new Date())

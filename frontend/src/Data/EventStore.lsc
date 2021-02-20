@@ -10,10 +10,10 @@ import { KvStore } from './KvStore'
         return false
 
     if query.before~looseNotEq(null):
-      if post.scheduledAt > query.before: return false
+      if post.time > query.before: return false
 
     if query.after~looseNotEq(null):
-      if post.scheduledAt < query.after: return false
+      if post.time < query.after: return false
 
     true
 

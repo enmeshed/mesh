@@ -6,7 +6,8 @@ import { toBorderString } from '../../util'
 import { momentForZone } from '../../Util/momentForZone'
 import { useTopBarWidget, useExtraMenu } from '../../Util/useTopBarWidget'
 import { useIsMobile } from '../../Layout'
-import { useDayEvents } from './CalendarData'
+import { useEvents } from './CalendarData'
+import { useActiveCalendar } from 'App/Data/useCalendars'
 
 import { Label1, Label2, Label4 } from 'baseui/typography'
 import { Button } from 'baseui/button'
@@ -60,6 +61,9 @@ daysForMonth(dateInMonth, forceSixRows, zone) ->
     row = rows[rows.length - 1]
     row[row.length - 1]
 
+  getFirstDay() ->
+    rows[0][0]
+
   // Add days from prior month to start of first week on calendar
   nPriorDays = date.weekday()
   trueStartDay = moment(date).subtract(nPriorDays, 'days')
@@ -88,7 +92,7 @@ daysForMonth(dateInMonth, forceSixRows, zone) ->
       makeDay(moment(start), 'next')
       start.add(1, 'days')
 
-  rows
+  [ rows, getFirstDay(), getLastDay() ]
 
 // Row of the month view
 Row({children, height}) ->
@@ -130,14 +134,13 @@ WeekdayHeader({weekday, small}) ->
   </div>
 
 // Day tiles in the center of the month view
-Day({day: {date, day, month, epoch}, small}) ->
+Day({day: {date, day, month, epoch}, small, events}) ->
   [ css, theme ] = useStyletron()
   navigate = useNavigate()
   bgColor = if month == 'current': '#FFFFFF' else: theme.colors.backgroundSecondary
   toDay = (ev) ->
     ev.preventDefault()
     navigate(`/main/calendar/${date.format('YYYY')}/${date.format('MM')}/${date.format('DD')}`)
-  events = useDayEvents(date)
 
   <div
     className={css({
@@ -261,14 +264,24 @@ EventDot({event}) ->
 
 
 // Body of the month view, generating a tile for each day
-MonthBody({small, zone, yearNumber, monthNumber}) ->
+MonthBody({small, zone, yearNumber, monthNumber, activeCalendar}) ->
   [ css ] = useStyletron()
 
-  rows = useMemo(
+  [rows, firstDay, lastDay] = useMemo(
     ->
       dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
       daysForMonth(dayInMonth, true, zone)
     [zone, yearNumber, monthNumber]
+  )
+  [events, loading, error] = useEvents(
+    moment(firstDay.date).startOf('day').unix()
+    moment(lastDay.date).startOf('day').unix()
+    if not activeCalendar:
+      'all'
+    elif activeCalendar.master:
+      'all'
+    else:
+      activeCalendar.id
   )
 
   <div className={css({
@@ -279,7 +292,11 @@ MonthBody({small, zone, yearNumber, monthNumber}) ->
     {...for idx ri, elem row in rows:
       <Row key={ri} height="16.6666666%">
         {...for elem day in row:
-          <Day day={day} key={day.index} small={small} />
+          // Filter events down to day level
+          dayStart = moment(day.date).startOf('day').unix()
+          dayEnd = moment(day.date).endOf('day').unix()
+          dayEvents = events.filter(x -> x.time >= dayStart and x.time <= dayEnd)
+          <Day day={day} key={day.index} small={small} events={dayEvents} />
         }
       </Row>
     }
@@ -292,8 +309,9 @@ export Month({year, month}) ->
 
   [ css ] = useStyletron()
   small = useIsMobile()
+  [ activeCalendar ] = useActiveCalendar()
 
-  zone = null
+  zone = activeCalendar?.zone
 
   dayInMonth = momentForZone(zone).year(yearNumber).month(monthNumber)
 
@@ -307,7 +325,7 @@ export Month({year, month}) ->
     flexDirection: 'column'
   })}>
     <MonthHeader small={small} />
-    <MonthBody small={small} yearNumber={yearNumber} monthNumber={monthNumber} />
+    <MonthBody small={small} yearNumber={yearNumber} monthNumber={monthNumber} zone={zone} activeCalendar={activeCalendar} />
   </div>
 
 // Top bar widget to move between months/calendars

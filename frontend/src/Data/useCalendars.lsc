@@ -1,5 +1,6 @@
 import { AppState } from './AppState'
 import { useStoreQuery } from './useStore'
+import { useObservableField } from 'App/Data/useObservable'
 
 // [ data, loading, errors ]
 export useCalendars() ->
@@ -7,3 +8,15 @@ export useCalendars() ->
   [ value, setQuery, loading, error ] = useStoreQuery(calStore, {})
 
   [ value or [], loading, error ]
+
+findMasterCalendar(cals) ->
+  (cals or []).find(x -> x.master == true)
+
+// Fetch the user's current active calendar
+export useActiveCalendar() ->
+  [ cals, calsLoading, calError ] = useCalendars()
+  activeCalendarId = useObservableField(AppState.sessionState, "activeCalendar")
+  let actualActiveCal = (cals or []).find(x -> x.id == activeCalendarId)
+  if not actualActiveCal: now actualActiveCal = findMasterCalendar(cals)
+
+  [actualActiveCal, activeCalendarId, calsLoading, calError]
