@@ -1,5 +1,5 @@
 import { AppState } from './AppState'
-import { useStoreQuery } from './useStore'
+import { useStoreQuery, useStoreItem } from './useStore'
 import { useObservableField } from 'App/Data/useObservable'
 
 // [ data, loading, errors ]
@@ -8,6 +8,9 @@ export useCalendars() ->
   [ value, setQuery, loading, error ] = useStoreQuery(calStore, {})
 
   [ value or [], loading, error ]
+
+export useCalendar(id) ->
+  useStoreItem(AppState.sessionState.accessibleCalendars, id)
 
 findMasterCalendar(cals) ->
   (cals or []).find(x -> x.master == true)

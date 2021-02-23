@@ -7,13 +7,13 @@ import { Disabled } from '../Disabled'
 import { Settings } from './Settings'
 import { CalendarRouter } from './Calendar/CalendarRouter'
 import { ContentRouter } from './Content/ContentRouter'
-import { Post } from './Post'
+import { PostRouter } from './Post/PostRouter'
 
 export MainRouter() ->
   <Router primary={false} component={React.Fragment}>
     <CalendarRouter path="calendar/*" />
-    <Post path="post/*" placeholderName="Post" />
-    <ContentRouter path="content/*" placeholderName="Content" />
+    <PostRouter path="post/*" />
+    <ContentRouter path="content/*" />
     <Settings path="settings/*" />
     <Disabled path="help/*" placeholderName="Help" />
     <Disabled path="dev/*" placeholderName="Developer" />

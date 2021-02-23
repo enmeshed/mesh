@@ -4,7 +4,7 @@ import { KvStore } from 'App/Data/KvStore'
 // Post store; for every Post created, automatically create an associated
 // calendar Event.
 @entity({name: 'PostStore'}) class PostStore extends KvStore:
-  idPrefix = 'post'
+  idPrefix = 'post_'
 
   delete(id): boolean -/>
     result <- super.delete(id)
@@ -21,6 +21,7 @@ import { KvStore } from 'App/Data/KvStore'
         calendarId: entity.calendarId
         type: 'post'
         time: entity.scheduledAt
+        zone: entity.zone
         dayEvent: false
         post: entity
       }]

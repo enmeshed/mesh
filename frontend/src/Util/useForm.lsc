@@ -8,18 +8,57 @@
 // - Pickle and unpickle form state to plain JSON for passing around
 // - Per-field and global form disable. Validation on blur disables only the
 //  field being validated. Most async operations disable the whole form.
-import { useRef, useReducer } from 'react'
+import { useRef, useReducer, useEffect } from 'react'
 
-export class Form {
+export class FormController {
   // Internally set the Reducer state each time it's updated
   _setReducer(state, dispatch): void ->
     this._state = state
     this._dispatch = dispatch
 
+  // Internally get the initial state vector for the Reducer.
+  _getInitialState() ->
+    {
+      // Whether certain pieces of the form should be disabled, e.g. while
+      // performing an async operation
+      disabled: {
+        // Is the form disabled outright?
+        global: false
+        // Should a particular field be disabled?
+        fields: {}
+      }
+      // Validation state
+      validation: {
+      }
+      // Form field values
+      values: this.getBlankValues()
+    }
+
+  _runSetter(setter, key, value) -/>
+    try:
+      // TODO: disables
+      <- Promise.resolve(setter.call(this, value))
+    catch err:
+      // TODO: flag validation
+      console.error(err)
+
+  _runAction(key, opts) -/>
+    try:
+      action = this.actions?[key]
+      if not action: return
+      <- Promise.resolve(action.call(this, opts))
+    catch err:
+      console.error(err)
+
+
   // Disable/enable form fields
   setDisabled(field, val): void ->
     // TODO
     return
+
+  isDisabled(field): boolean ->
+    // TODO
+    false
 
   // Set a form field value without triggering any validations or side
   // effects.
@@ -29,6 +68,12 @@ export class Form {
   // Set multiple form values
   rawAssign(payload): void ->
     this._dispatch({type: 'setValues', payload})
+
+  // Set a key to a value, calling validators and side effects.
+  set(key, value): void ->
+    this.rawSet(key, value)
+    if this.setters?[key]:
+      this._runSetter(this.setters[key], key, value).catch(err -> console.error(err))
 
   // Get the value for a key
   get(key) ->
@@ -53,6 +98,17 @@ export class Form {
   // asynchronous method, in which case the form will be disabled while
   // it is awaited.
   initialize(initialInput) -> return
+
+  // Run an async action on this form
+  action(key, opts) ->
+    this._runAction(key, opts).catch(err -> console.error(err))
+
+  // Override this method to run additional React hooks when the initial
+  // form hook is added
+  useReactHooks(): void -> return
+
+  // Run a validation on this form
+  validate(opts): void -> return
 
 }
 
@@ -112,3 +168,33 @@ export useFormState(controllerClass, initialInput) ->
   if not controller:
     now controller = new controllerClass()
     controllerRef.current = controller
+
+  // Create the reducer object
+  [ state, dispatch ] = useReducer(formReducer, null, ->
+    controller._getInitialState()
+  )
+  controller._setReducer(state, dispatch)
+
+  // Initialize the form once at mount time
+  formInitAsync() -/>
+    // Disable all fields
+    controller.setDisabled(null, true)
+
+    try:
+      <- Promise.resolve(controller.initialize(initialInput))
+    catch err:
+      // TODO
+      console.error(err)
+    finally:
+      controller.setDisabled(null, false)
+
+  useEffect(
+    ->
+      formInitAsync().catch(err -> console.error(err))
+    []
+  )
+
+  // Use any additional form hooks
+  controller.useReactHooks()
+
+  controller

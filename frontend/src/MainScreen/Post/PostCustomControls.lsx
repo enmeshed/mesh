@@ -1,0 +1,25 @@
+import React, { useMemo } from 'react'
+
+import { useCalendar } from 'App/Data/useCalendars'
+
+import { SocialAccountSelect } from 'App/Util/SocialAccountSelect'
+
+// Target selector that only shows valid targets for the given calendar
+export PostTargetSelector({calendarId, setTargets, ...restProps}) ->
+  [ targetCalendar ] = useCalendar(calendarId)
+
+  // Show only valid accounts for the given calendar
+  targetFilter = useMemo(
+    ->
+      filter(sa) ->
+        if targetCalendar?.allowedTargets:
+          if targetCalendar.allowedTargets.find(x -> x.id == sa.id):
+            true
+          else:
+            false
+        else:
+          true
+    [targetCalendar]
+  )
+
+  <SocialAccountSelect targetFilter={targetFilter} setTargets={setTargets} {...restProps} />

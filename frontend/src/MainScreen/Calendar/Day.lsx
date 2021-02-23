@@ -28,6 +28,17 @@ import CalendarIcon from '../../Icons/calendar'
 
 { moment } = require('globalthis')()
 
+postAtDate(navigate, d) ->
+  navigate("/main/post", {
+    state: {
+      post: {
+        date: d.toISOString(true)
+        time: d.toISOString(true)
+      }
+    }
+  })
+
+
 // Day view grid
 GutterEntry({small, date}) ->
   [ css, theme ] = useStyletron()
@@ -42,10 +53,10 @@ GutterEntry({small, date}) ->
 
   onClick(ev) ->
     ev.preventDefault()
-    navigate("/main/post", { state: { date: date.toISOString(true), time: date.toISOString(true) } })
+    postAtDate(navigate, date)
   onClickBottom(ev) ->
     ev.preventDefault()
-    navigate("/main/post", { state: { date: bottomHalf.toISOString(true), time: bottomHalf.toISOString(true) } })
+    postAtDate(navigate, bottomHalf)
 
   <div className={css({
     position: 'relative'
@@ -82,7 +93,7 @@ BlankEntry({small, date}) ->
 
   onClick(ev) ->
     ev.preventDefault()
-    navigate("/main/post", { state: { date: date.toISOString(true), time: date.toISOString(true) } })
+    postAtDate(navigate, date)
 
   <div className={css({
     display: 'flex'
@@ -130,7 +141,13 @@ Grid({start, end, small, columns}) ->
 
 EventBubble({event}) ->
   [ css, theme ] = useStyletron()
+  navigate = useNavigate()
   { event: { post: post } } = event
+
+  editPost(ev) ->
+    ev.preventDefault()
+    navigate(`/main/post/${post.id}`)
+
   <div style={{
     position: 'absolute'
     top: event.slot * 25
@@ -143,12 +160,12 @@ EventBubble({event}) ->
     backgroundColor: theme.colors.backgroundSecondary
     display: 'flex'
     flexDirection: 'column'
-  }}>
+  }} onClick={editPost}>
     <div>
       <Label2 as="span">Post</Label2>&nbsp;
       <Paragraph2 as="span">to {post.targets[0].username}:</Paragraph2>
     </div>
-    <Paragraph3 as="span">{post.content}</Paragraph3>
+    <Paragraph3 as="span">{post.text}</Paragraph3>
   </div>
 
 // Day view header
@@ -233,12 +250,13 @@ export Day({year, month, day}) ->
   binPacker = useMemo(
     ->
       posts = events.filter(x -> x.post)
-      console.log("posts dv", posts)
       posts.sort((a,b) -> a.time - b.time)
       packer = new BinPacker(start, end, 30)
-      packer.packSortedEvents(posts, (post) -> momentForZone(zone, post.time * 1000))
+      packer.packSortedEvents(posts, (post) ->
+        momentForZone(zone, post.time * 1000)
+      )
       packer
-    [events]
+    [events, zone]
   )
 
   <StickyTop>

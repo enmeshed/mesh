@@ -1,0 +1,309 @@
+import React, { useEffect } from 'react'
+import { useStyletron } from 'baseui'
+import { useNavigate } from '@reach/router'
+
+import { AppState } from 'App/Data/AppState'
+import { WorkContext } from 'App/Util/WorkContext'
+import { useSocialAccounts } from 'App/Data/useSocialAccounts'
+import { useWritableStore } from 'App/Data/useStore'
+import { momentForZone } from 'App/Util/momentForZone'
+
+import { FormControl } from 'baseui/form-control'
+import { DatePicker } from 'baseui/datepicker'
+import { TimePicker } from 'baseui/timepicker'
+import { TimezonePicker } from 'baseui/timezonepicker'
+import { Select } from 'baseui/select'
+import { Textarea } from "baseui/textarea"
+import { FileUploader } from "baseui/file-uploader"
+import { Button } from 'baseui/button'
+import { Tag } from 'baseui/tag'
+
+import { VerticalScrollArea } from '../Layout'
+import { FormController, useFormState } from 'App/Util/useForm'
+import { FormSection, FormControlGroup, FormScreen } from 'App/Util/Forms'
+import { SocialAccountSelect } from 'App/Util/SocialAccountSelect'
+import { CalendarSelect } from 'App/MainScreen/Calendar/CalendarSelect'
+import { PostTargetSelector } from './PostCustomControls'
+
+import SearchIcon from 'baseui/icon/search'
+import FacebookIcon from 'App/Icons/facebook-f'
+import TwitterIcon from 'App/Icons/twitter'
+
+{ moment } = require('globalthis')()
+
+dateByNumbers(mom) ->
+  new Date(mom.year(),mom.month(),mom.date(),mom.hour(),mom.minute(),mom.second(),mom.millisecond())
+
+class PostFormController extends FormController:
+  // Stringify dates when pickling/unpickling
+  pickle() ->
+    pickled = super.pickle()
+    pickled.date = pickled.date.toString()
+    pickled.time = pickled.time.toString()
+    pickled
+
+  unpickle(values): void ->
+    if typeof(values.date) == 'string': values.date = new Date(values.date)
+    if typeof(values.time) == 'string': values.time = new Date(values.time)
+    super.unpickle(values)
+
+  getBlankValues() -> {
+    date: new Date()
+    time: new Date()
+    zone: moment.tz.guess()
+    text: ''
+    targets: []
+    image: {}
+    editId: null
+  }
+
+  initialize({location, editId}): void -/>
+    // Collect incoming form data
+    incomingData = {}
+
+    // First, if we were previously working on a post which we saved into
+    // a work context, resume from there.
+    ctx = WorkContext.current()
+    if ctx.type == 'post':
+      WorkContext.set(null)
+      Object.assign(incomingData, ctx.state)
+
+      // If the work context contained an image or content item picked
+      // by the user, attach it to the post as well.
+      if ctx.chosenContent:
+        if ctx.chosenContent.media:
+          incomingData.image = ctx.chosenContent.media[0]
+        if ctx.chosenContent.body:
+          incomingData.text = ctx.chosenContent.body
+
+    // Second, apply any data that was passed in via location.
+    if location?.state?.post:
+      Object.assign(incomingData, location.state.post)
+
+    // If we are editing an existing post, load it
+    // Early out if we already loaded the post on a previous visit
+    // In this case the data was already loaded in the serialized form
+    if editId and (not incomingData.editId):
+      postStore = AppState.sessionState.posts
+      post <- postStore.get(editId)
+      // Translate from post data to form field entries
+      postFormData = {}
+      if post.text: postFormData.text = post.text
+      if post.calendarId: postFormData.calendarId = post.calendarId
+      if post.media?[0]: postFormData.image = post.media[0]
+      if post.targets: postFormData.targets = post.targets
+      if post.zone: postFormData.zone = post.zone
+      if post.scheduledAt:
+        scheduledAt = if post.zone:
+          postFormData.zone = post.zone
+          moment.tz(post.scheduledAt * 1000, post.zone)
+        else:
+          moment.unix(post.scheduledAt)
+
+        console.log("editing post date", scheduledAt, scheduledAt.toDate())
+        postFormData.date = dateByNumbers(scheduledAt)
+        console.log(postFormData.date)
+        postFormData.time = dateByNumbers(scheduledAt)
+
+      console.log("editing post", editId, post, postFormData)
+      Object.assign(incomingData, postFormData)
+      incomingData.editId = editId
+
+    // Now unpickle any incoming data
+    this.unpickle(incomingData)
+
+    // Lastly, if we don't have a calendar ID, select the currently
+    // active calendar. We use set() here because we want to trip side
+    // effects from changing the calendar, including picking default accounts.
+    if not incomingData.calendarId:
+      this.set('calendarId', AppState.sessionState.activeCalendar)
+
+  setters = {
+    calendarId(nextId): void -/>
+      // When calendar ID is changed by the user, set the social targets
+      // and time zone to match those of the newly selected calendar.
+      if not nextId: return
+      calendar <- AppState.sessionState.accessibleCalendars.get(nextId)
+      if not calendar: return
+      if calendar.zone: this.set('zone', calendar.zone)
+      if calendar.defaultTargets?.length > 0:
+        this.set('targets', calendar.defaultTargets)
+  }
+
+  useReactHooks(): void ->
+    [write, saving, err, del] = useWritableStore(AppState.sessionState.posts)
+    this.write = write
+    this.saving = saving
+    this.del = del
+
+  canDelete(): boolean ->
+    if this.get("editId"): true else: false
+
+  isEditing(): boolean ->
+    this.canDelete()
+
+  actions = {
+    submit(): void -/>
+      // Full validation
+      <- this.validate()
+      // Formulate the Post object from the form fields
+      values = this.getValues()
+      console.log("submitting post form values", values)
+      { date, time } = values
+      targetTimespec = [date.getFullYear(), date.getMonth(), date.getDate(), time.getHours(), time.getMinutes(), 0, 0]
+      scheduledAt = momentForZone(values.zone, targetTimespec).unix()
+      post = {
+        id: values.editId
+        calendarId: values.calendarId
+        targets: values.targets
+        media: if values.image: [values.image]
+        text: values.text
+        zone: values.zone
+        scheduledAt
+      }
+      <- this.write([post])
+      return
+
+    delete(): void -/>
+      editId = this.get("editId")
+      if not editId:
+        throw new Error("cannot delete")
+      <- this.del(editId)
+  }
+
+
+// Post form
+PostForm({location, editId}) ->
+  controller = useFormState(PostFormController, {location, editId})
+  navigate = useNavigate()
+
+  image = controller.get('image')
+  imageSrc = image?.fullUrl or image?.thumbUrl
+
+  onCancel() -> navigate(-1)
+  onRemoveImage() ->
+    controller.set('image', null)
+  onGetContent() ->
+    WorkContext.set(new WorkContext({
+      type: 'post'
+      contextDescription: `Choose content for your Post.`
+      returnTo: '/main/post'
+      state: controller.pickle()
+      hooks: {
+        onChooseContent(context, content) ->
+          console.log("chose content", content)
+          context.chosenContent = content
+          context.restore()
+      }
+    }))
+    navigate('/main/content')
+  onSubmit() -/>
+    <- controller.action("submit")
+    navigate(-1)
+  onDelete() -/>
+    <- controller.action("delete")
+    navigate(-1)
+
+  // TODO: Char Count for text
+
+  <React.Fragment>
+    <FormSection title="Targets">
+      <FormControl label="Post To">
+        <PostTargetSelector
+          calendarId={controller.get('calendarId')}
+          placeholder="Choose target accounts..."
+          targets={controller.get('targets')}
+          setTargets={x -> controller.set('targets', x)}
+        />
+      </FormControl>
+    </FormSection>
+
+    <FormSection title="Content">
+      <Button onClick={onGetContent}>Get Content from Library</Button>
+      <FormControl label="Text">
+        <Textarea
+          value={controller.get('text')}
+          onChange={(ev) -> controller.set('text', ev.target.value)}
+          placeholder="Enter the text to post..."
+        />
+      </FormControl>
+      <FormControl label="Image">
+        {if imageSrc:
+            <img
+              src={imageSrc}
+              style={{
+                maxWidth: '100%'
+                maxHeight: '500px'
+                objectFit: 'contain'
+              }}
+            />
+        else:
+          <FileUploader />
+        }
+      </FormControl>
+      {if imageSrc:
+        <Button onClick={onRemoveImage}>Remove Image</Button>
+      }
+    </FormSection>
+
+
+    <FormSection title="Schedule">
+      <FormControl label="Calendar">
+        <CalendarSelect
+          required
+          value={controller.get('calendarId')}
+          onChange={ (id) ->
+            controller.set('calendarId', id)
+          }
+        />
+      </FormControl>
+      <FormControlGroup>
+          <FormControl label="Date">
+            <DatePicker
+              value={[controller.get('date')]}
+              onChange={
+                ({date}) ->
+                  controller.set('date', if Array.isArray(date): date[0] else: date)
+              }
+              formatString="MM/dd/yyyy"
+            />
+          </FormControl>
+          <FormControl label="Time">
+            <TimePicker
+              creatable
+              value={controller.get('time')}
+              onChange={ (time) -> controller.set('time', time)}
+            />
+          </FormControl>
+      </FormControlGroup>
+      <FormControl label="Timezone">
+        <TimezonePicker
+          value={controller.get('zone')}
+          onChange={ (zone) ->
+            controller.set('zone', zone.id) }
+        />
+      </FormControl>
+    </FormSection>
+
+    <FormControlGroup tight>
+      <Button onClick={onSubmit}>
+        { if controller.isEditing(): "Edit Post" else: "Post"}
+      </Button>
+      {
+        if controller.canDelete():
+          <Button onClick={onDelete}>Delete Post</Button>
+      }
+      <Button kind="secondary" onClick={onCancel}>Cancel</Button>
+    </FormControlGroup>
+  </React.Fragment>
+
+// Post screen
+export Post({location}) ->
+  <FormScreen>
+    <PostForm location={location} />
+  </FormScreen>
+
+export EditPost({location, editId}) ->
+  <FormScreen>
+    <PostForm location={location} editId={editId} />
+  </FormScreen>

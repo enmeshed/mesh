@@ -7,6 +7,7 @@
 'use strict';
 
 const path = require('path');
+const targets = require('./targets')
 
 const validateBoolOption = (name, value, defaultValue) => {
   if (typeof value === 'undefined') {
@@ -65,11 +66,7 @@ module.exports = function(api, opts, env) {
     }
   } else if (isEnvProduction || isEnvDevelopment) {
     envPresetOptions = {
-      // We want Create React App to be IE 9 compatible until React itself
-      // no longer works with IE 9
-      targets: {
-        ie: 9,
-      },
+      targets: targets,
       // Users cannot override this behavior because this Babel
       // configuration is highly tuned for ES5 support
       ignoreBrowserslistConfig: true,

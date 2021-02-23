@@ -86,20 +86,21 @@ export useWritableStore(store) ->
   [ loading, setLoading ] = useState(false)
   [ error, setError ] = useState(null)
 
-  doStore(entities) -/>
+  doOp(op, entities) -/>
     try:
       setError(null)
       setLoading(true)
-      <- store.set(entities)
+      <- store[op](entities)
     catch err:
       setError(err)
+      throw err
     finally:
       setLoading(false)
 
-  write(entities, onSuccess) ->
-    doStore(entities).then(
-      (): void -> if onSuccess: onSuccess()
-      (err): void -> setError(err)
-    )
+  write(entities) ->
+    doOp("set", entities)
 
-  [write, loading, error]
+  del(id) ->
+    doOp("delete", id)
+
+  [write, loading, error, del]

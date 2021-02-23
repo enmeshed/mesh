@@ -1,0 +1,13 @@
+import React from 'react'
+import { Router, Redirect } from '@reach/router'
+
+import { NotFound } from 'App/NotFound'
+import { Disabled } from 'App/Disabled'
+
+import { Post, EditPost } from './Post'
+
+export PostRouter() ->
+  <Router primary={false} component={React.Fragment}>
+    <EditPost path=":editId" />
+    <Post default />
+  </Router>

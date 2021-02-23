@@ -10,12 +10,16 @@ calMocks = [
     id: "cal_1"
     name: "Master Calendar"
     zone: "America/Phoenix"
+    allowedTargets: [{id: "sa_1", medium: "twitter", username: "@SimplibuzzTech"}]
+    defaultTargets: [{id: "sa_1", medium: "twitter", username: "@SimplibuzzTech"}]
     master: true
   }
   {
     id: "cal_2"
     name: "Second Calendar"
-    zone: "America/Phoenix"
+    zone: "America/New_York"
+    allowedTargets: [{id: "sa_2", medium: "facebook", username: "SimpliBuzz Tech"}]
+    defaultTargets: [{id: "sa_2", medium: "facebook", username: "SimpliBuzz Tech"}]
   }
 ]
 
@@ -43,7 +47,7 @@ postMocks = [
       medium: "twitter"
       username: "@SimplibuzzTech"
     }]
-    content: "Test post Jan 20 5pm"
+    text: "Test post Jan 20 5pm"
   }
   {
     id: "post_2"
@@ -54,7 +58,7 @@ postMocks = [
       medium: "twitter"
       username: "@SimplibuzzTech"
     }]
-    content: "John 3:16"
+    text: "John 3:16"
   }
   {
     id: "post_3"
@@ -65,7 +69,7 @@ postMocks = [
       medium: "twitter"
       username: "@SimplibuzzTech"
     }]
-    content: "Welcome to SimpliBuzz 2.0"
+    text: "Welcome to SimpliBuzz 2.0"
   }
   {
     id: "post_4"
@@ -76,7 +80,22 @@ postMocks = [
       medium: "twitter"
       username: "@SimplibuzzTech"
     }]
-    content: "Test post Jan 16"
+    text: "Test post Jan 16"
+  }
+  {
+    id: "post_5"
+    calendarId: "cal_2"
+    scheduledAt: (->
+      unix = moment.tz("2021-01-16 17:00","America/New_York").unix()
+      unix
+    )()
+    zone: "America/New_York"
+    targets: [{
+      id: "sa_1"
+      medium: "twitter"
+      username: "@SimplibuzzTech"
+    }]
+    text: "Test post to calendar 2 at 5EST Jan 16"
   }
 ]
 
