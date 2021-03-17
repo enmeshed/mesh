@@ -12,7 +12,7 @@ export PostTargetSelector({calendarId, setTargets, ...restProps}) ->
   targetFilter = useMemo(
     ->
       filter(sa) ->
-        if targetCalendar?.allowedTargets:
+        if targetCalendar?.allowedTargets?.length > 0:
           if targetCalendar.allowedTargets.find(x -> x.id == sa.id):
             true
           else:

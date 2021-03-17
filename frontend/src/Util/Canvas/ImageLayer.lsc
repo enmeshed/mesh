@@ -1,0 +1,37 @@
+import { ScalarLayer } from './ScalarLayer'
+
+// An ImageLayer is a layer that displays a single DOM Image object.
+// Its transform is controlled as a ScalarLayer.
+export class ImageLayer extends ScalarLayer:
+  setImage(image) ->
+    this.image = image
+    aspect = if image: image.width / image.height else: 1
+
+    this.aspect = aspect
+
+    this.reset()
+    this.scale(aspect, 1)
+    this.rotate(0)
+
+    this
+
+  getImage() -> this.image
+
+  getTransformedBoxDimensions() ->
+    super.getTransformedBoxDimensions(-0.5, -0.5, 0.5, 0.5)
+
+  fit() ->
+    // Initialize with 1:1 fit
+    this.translate(null, null)
+    this.scale(this.aspect, 1)
+    this.updateTransform()
+
+    if not this.image: return this
+
+    this.fitBoxToParent(-0.5, -0.5, 0.5, 0.5)
+    this
+
+  paint(canvas, context) ->
+    if this.image:
+      context.globalCompositeOperation = 'source-over'
+      context.drawImage(this.image, -0.5, -0.5, 1, 1)

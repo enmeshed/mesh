@@ -42,6 +42,7 @@ export CalendarListNavbarWidget() ->
     display: 'flex'
     alignItems: 'center'
   })}>
+    <b>Calendars</b>
     <div style={{flex: 1}} />
     <ResponsiveIconButton Icon={PlusIcon} label="Create" onClick={onCreateCalendar} />
   </div>
@@ -91,6 +92,7 @@ CalendarForm({editCalendarId}) ->
   [ zone, setZone ] = useState(moment.tz.guess())
   [ defaultTargets, setDefaultTargets ] = useState([])
   [ allowedTargets, setAllowedTargets ] = useState([])
+  [ isMaster, setIsMaster ] = useState(false)
 
   calStore = AppState.sessionState.accessibleCalendars
 
@@ -102,6 +104,7 @@ CalendarForm({editCalendarId}) ->
       setZone(cal.zone)
       setDefaultTargets(cal.defaultTargets or [])
       setAllowedTargets(cal.allowedTargets or [])
+      setIsMaster(cal.master)
   useEffect(loadCalEffect, [cal])
 
   [ write, saving ] = useWritableStore(calStore)
@@ -112,6 +115,7 @@ CalendarForm({editCalendarId}) ->
       zone
       defaultTargets
       allowedTargets
+      master: isMaster
     }
 
     <- write([saveCal])

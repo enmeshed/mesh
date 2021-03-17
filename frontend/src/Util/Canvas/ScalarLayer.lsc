@@ -1,0 +1,36 @@
+import { Layer } from './Layer'
+import mat2d from './math-mat2d'
+
+// A ScalarLayer generates its transform by translating, rotating, and scaling
+// by a given set of scalar values.
+export class ScalarLayer extends Layer:
+  constructor() ->
+    super()
+    this.reset()
+
+  reset() ->
+    this.dx = null
+    this.sx = null
+    this.theta = null
+
+  translate(dx, dy) ->
+    this.dx = dx
+    this.dy = dy
+
+  rotate(rad) ->
+    this.theta = rad
+
+  scale(sx, sy) ->
+    this.sx = sx
+    this.sy = sy
+
+  updateTransform() ->
+    matrix = this.matrix
+    mat2d.identity(matrix)
+    if this.dx != null: mat2d.translate(matrix, matrix, [this.dx, this.dy])
+    if this.theta != null: mat2d.rotate(matrix, matrix, this.theta)
+    if this.sx != null: mat2d.scale(matrix, matrix, [this.sx, this.sy])
+
+  willPaint(canvas, context) ->
+    this.updateTransform()
+    super.willPaint(canvas, context)

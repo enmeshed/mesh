@@ -35,6 +35,12 @@ saTagOverrides = {
       alignItems: 'center'
     }
   }
+  Root: {
+    style: {
+      marginTop: '2px'
+      marginBottom: '2px'
+    }
+  }
 }
 
 export SocialAccountTag({value, ...restProps}) ->

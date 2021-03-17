@@ -1,0 +1,107 @@
+import mat2d from './math-mat2d'
+{ EPSILON } = require('./math-common')
+
+// A Layer is a single element drawn on a canvas.
+//
+// - Layers are arranged hierarchically in a parent-child system
+// - Each layer has a matrix that transforms coordinates native to that layer
+//   into the coordinate system native to the parent layer.
+// - Child layers are drawn first, before parents.
+export class Layer:
+  constructor() ->
+    this.matrix = mat2d.create()
+
+  reset() ->
+    mat2d.identity(this.matrix)
+
+  // Transform a box to the parent and get the dimensions.
+  getTransformedBoxDimensions(left, top, right, bottom) ->
+    tl = [left, top]
+    br = [right, bottom]
+
+    mat2d.transformVec2(tl, this.matrix, tl)
+    mat2d.transformVec2(br, this.matrix, br)
+
+    [ Math.abs(br[0] - tl[0]), Math.abs(br[1] - tl[1]) ]
+
+  // Scale this layer so the given box fits precisely into the parent layer.
+  fitBoxToParent(left, top, right, bottom) ->
+    if (not this.aspect)
+    or (not this.parent)
+    or (not this.parent.width) or (not this.parent.height):
+      console.warn("warning: fitBoxToParent: missing parent or child dimensions")
+      return this
+
+    // Get size of transformed box in parent coords
+    [ dx, dy ] = this.getTransformedBoxDimensions(left, top, right, bottom)
+    // Scale to shortest parent dimeinsion
+    let scale = 1
+    if dy > this.parent.height + EPSILON: now scale = Math.min(scale, this.parent.height/dy)
+    if dx > this.parent.width + EPSILON: now scale = Math.min(scale, this.parent.width/dx)
+    // If not scale down, scale up
+    if (scale == 1)
+    and (dx < this.parent.width - EPSILON)
+    and (dy < this.parent.height - EPSILON):
+      if this.parent.height < this.parent.width:
+        now scale = this.parent.height/dy
+      else:
+        now scale = this.parent.width/dx
+
+    this.scale(this.aspect * scale, scale)
+    this
+
+  static fitAspect(w, h, aspect) ->
+    if aspect * h > w:
+      now h = w / aspect
+    else if w / aspect > h:
+      now w = h * aspect
+
+    [w, h]
+
+  pushChild(child) ->
+    this.children = this.children or []
+    this.children.push(child)
+    child.parent = this
+    this
+
+  setAspect(w, h) ->
+    this.aspect = w/h
+    this.width = this.aspect
+    this.height = 1
+    this.reset()
+    this.scale(h, h)
+    this.translate(0.5 * this.aspect, 0.5)
+    this
+
+  translate(dx, dy) ->
+    matrix = this.matrix
+    mat2d.translate(matrix, matrix, [dx, dy])
+    this
+
+  rotate(rad) ->
+    matrix = this.matrix
+    mat2d.rotate(matrix, matrix, rad)
+    this
+
+  scale(sx, sy) ->
+    matrix = this.matrix
+    mat2d.scale(matrix, matrix, [sx, sy])
+    this
+
+  doPaint(canvas, context) ->
+    this.willPaint(canvas, context)
+    this.paint(canvas, context)
+    this.didPaint(canvas, context)
+
+  willPaint(canvas, context) ->
+    context.save()
+    context.transform.apply(context, this.matrix)
+    if this.children:
+      for elem e in this.children:
+        e.parent = this
+        e.doPaint(canvas, context)
+
+  paint(canvas, context) -> return
+
+  didPaint(canvas, context) ->
+    context.restore()

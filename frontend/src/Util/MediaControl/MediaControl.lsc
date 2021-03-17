@@ -1,0 +1,146 @@
+import React, { useCallback, useState, useEffect } from 'react'
+
+import { Layer } from 'App/Util/Canvas/Layer'
+import { ImageLayer } from 'App/Util/Canvas/ImageLayer'
+
+import { FileUploader } from "baseui/file-uploader"
+import { Button } from "baseui/button"
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalButton,
+} from 'baseui/modal'
+
+import { Canvas } from 'App/Util/Canvas/Canvas'
+
+deferred = require('p-defer')
+
+fileToDataUrl(file) -/>
+  p = deferred()
+  reader = new FileReader()
+  reader.onloadend = (e): void ->
+    if e.target.error:
+      p.reject(e.target.error)
+    elif e.target.result:
+      p.resolve(e.target.result)
+    else:
+      p.reject(new Error("unknown error"))
+  reader.readAsDataURL(file)
+  p.promise
+
+dataUrlToImage(durl) -/>
+  p = deferred()
+  imago = new Image()
+  imago.onload = (e): void -> p.resolve(imago)
+  imago.onerror = (e): void -> p.reject(e.target.error)
+  imago.src = durl
+  p.promise
+
+MediaModal({droppedDataUrl, setDroppedDataUrl}) ->
+  [ canvasDraw, setCanvasDraw ] = useState({})
+  [ rootLayer ] = useState(->
+    r = new Layer()
+    r.pushChild(new ImageLayer())
+    r
+  )
+
+  receivedDurl(durl): void -/>
+    if not durl:
+      setCanvasDraw({})
+      return
+    imageLayer = rootLayer.children[0]
+    image <- dataUrlToImage(durl)
+    imageLayer.setImage(image)
+    imageLayer.fit()
+    setCanvasDraw({ layer: rootLayer })
+
+  onCanvasSizeChanged(dx, dy) ->
+    rootLayer.setAspect(dx, dy)
+    rootLayer.children[0].fit()
+    setCanvasDraw({ layer: rootLayer })
+
+  useEffect(
+    ->
+      receivedDurl(droppedDataUrl).catch((err) -> console.error(err))
+    [droppedDataUrl]
+  )
+
+  onClose = useCallback(
+    (): void -> setDroppedDataUrl(null)
+  )
+
+  onOK = useCallback(
+    (): void -/> return
+  )
+
+  <Modal
+    onClose={onClose}
+    isOpen={!!droppedDataUrl}
+    overrides={{
+      Dialog: {
+        style: {
+          width: '80vw'
+          height: '80vh'
+          display: 'flex'
+          flexDirection: 'column'
+        }
+      }
+    }}
+  >
+    <ModalHeader>Add Image</ModalHeader>
+    <ModalBody style={{display: 'flex', flex: '1', position: 'relative'}}>
+      <Canvas draw={canvasDraw} onSizeChanged={onCanvasSizeChanged} style={{width: '100%', height:'100%', position: 'absolute' }} />
+    </ModalBody>
+    <ModalFooter>
+      <ModalButton kind="tertiary" onClick={onClose}>
+        Cancel
+      </ModalButton>
+      <ModalButton onClick={onClose}>OK</ModalButton>
+    </ModalFooter>
+  </Modal>
+
+// Control for media upload forms.
+export MediaControl({value, onChange}) ->
+  imageSrc = value?[0]?.fullUrl or value?[0]?.thumbUrl
+
+  [droppedDataUrl, setDroppedDataUrl] = useState(null)
+
+  onRemoveImage = useCallback(
+    (): void -> onChange([])
+    []
+  )
+  onFileDrop = useCallback(
+    (accepted, rejected): void -/>
+      console.log("accepted", accepted, "rejected", rejected)
+      file = accepted?[0]
+      if not (file instanceof File):
+        console.log("file not found")
+        return
+      dataUrl <- fileToDataUrl(file)
+      setDroppedDataUrl(dataUrl)
+    []
+  )
+
+  <React.Fragment>
+    <MediaModal droppedDataUrl={droppedDataUrl} setDroppedDataUrl={setDroppedDataUrl} />
+    {if imageSrc:
+      <img
+        src={imageSrc}
+        style={{
+          maxWidth: '100%'
+          maxHeight: '500px'
+          objectFit: 'contain'
+        }}
+      />
+    else:
+      <FileUploader
+        accept="image/*"
+        onDrop={onFileDrop}
+      />
+    }
+    {if imageSrc:
+      <Button onClick={onRemoveImage}>Remove Image</Button>
+    }
+  </React.Fragment>

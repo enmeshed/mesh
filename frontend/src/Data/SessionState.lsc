@@ -10,16 +10,70 @@ calMocks = [
     id: "cal_1"
     name: "Master Calendar"
     zone: "America/Phoenix"
-    allowedTargets: [{id: "sa_1", medium: "twitter", username: "@SimplibuzzTech"}]
-    defaultTargets: [{id: "sa_1", medium: "twitter", username: "@SimplibuzzTech"}]
+    allowedTargets: []
+    defaultTargets: []
     master: true
   }
   {
     id: "cal_2"
-    name: "Second Calendar"
+    name: "Copper Still"
     zone: "America/New_York"
-    allowedTargets: [{id: "sa_2", medium: "facebook", username: "SimpliBuzz Tech"}]
-    defaultTargets: [{id: "sa_2", medium: "facebook", username: "SimpliBuzz Tech"}]
+    allowedTargets: [
+      {
+        id: "sa_1"
+        medium: "twitter"
+        username: "@CopperStill"
+      }
+      {
+        id: "sa_2"
+        medium: "facebook"
+        username: "Copper Still"
+      }
+    ]
+    defaultTargets: [
+      {
+        id: "sa_1"
+        medium: "twitter"
+        username: "@CopperStill"
+      }
+      {
+        id: "sa_2"
+        medium: "facebook"
+        subtype: "page"
+        username: "Copper Still"
+      }
+    ]
+  }
+  {
+    id: "cal_3"
+    name: "Arcadia Roofing"
+    zone: "America/Phoenix"
+    allowedTargets: [
+      {
+        id: "sa_3"
+        medium: "twitter"
+        username: "@ArcadiaRoofing"
+      }
+      {
+        id: "sa_4"
+        medium: "facebook"
+        subtype: "page"
+        username: "Arcadia Roofing"
+      }
+    ]
+    defaultTargets: [
+      {
+        id: "sa_3"
+        medium: "twitter"
+        username: "@ArcadiaRoofing"
+      }
+      {
+        id: "sa_4"
+        medium: "facebook"
+        subtype: "page"
+        username: "Arcadia Roofing"
+      }
+    ]
   }
 ]
 
@@ -27,75 +81,118 @@ saMocks = [
   {
     id: "sa_1"
     medium: "twitter"
-    username: "@SimplibuzzTech"
+    username: "@CopperStill"
   }
   {
     id: "sa_2"
     medium: "facebook"
     subtype: "page"
-    username: "SimpliBuzz Tech"
+    username: "Copper Still"
+  }
+  {
+    id: "sa_3"
+    medium: "twitter"
+    username: "@ArcadiaRoofing"
+  }
+  {
+    id: "sa_4"
+    medium: "facebook"
+    subtype: "page"
+    username: "Arcadia Roofing"
   }
 ]
 
 postMocks = [
   {
     id: "post_1"
-    calendarId: "cal_1"
-    scheduledAt: moment("2021-01-20 17:00").unix()
-    targets: [{
-      id: "sa_1"
-      medium: "twitter"
-      username: "@SimplibuzzTech"
-    }]
-    text: "Test post Jan 20 5pm"
+    calendarId: "cal_2"
+    scheduledAt: moment("2021-02-23 17:00").unix()
+    targets: [
+      {
+        id: "sa_1"
+        medium: "twitter"
+        username: "@CopperStill"
+      }
+      {
+        id: "sa_2"
+        medium: "facebook"
+        subtype: "page"
+        username: "Copper Still"
+      }
+    ]
+    text: "Come to Copper Still for Happy Hour"
   }
   {
     id: "post_2"
-    calendarId: "cal_1"
-    scheduledAt: moment("2021-01-15 09:30").unix()
-    targets: [{
-      id: "sa_1"
-      medium: "twitter"
-      username: "@SimplibuzzTech"
-    }]
-    text: "John 3:16"
+    calendarId: "cal_3"
+    scheduledAt: moment("2021-02-23 09:30").unix()
+    targets: [
+      {
+        id: "sa_3"
+        medium: "twitter"
+        username: "@ArcadiaRoofing"
+      }
+      {
+        id: "sa_4"
+        medium: "facebook"
+        subtype: "page"
+        username: "Arcadia Roofing"
+      }
+    ]
+    text: "Redo your roof with Arcadia"
   }
   {
     id: "post_3"
     calendarId: "cal_1"
-    scheduledAt: moment("2021-01-16 12:30").unix()
-    targets: [{
-      id: "sa_1"
-      medium: "twitter"
-      username: "@SimplibuzzTech"
-    }]
-    text: "Welcome to SimpliBuzz 2.0"
-  }
-  {
-    id: "post_4"
-    calendarId: "cal_1"
-    scheduledAt: moment("2021-01-16 17:00").unix()
-    targets: [{
-      id: "sa_1"
-      medium: "twitter"
-      username: "@SimplibuzzTech"
-    }]
-    text: "Test post Jan 16"
+    scheduledAt: moment("2021-02-23 12:30").unix()
+    targets: [
+      {
+        id: "sa_1"
+        medium: "twitter"
+        username: "@CopperStill"
+      }
+      {
+        id: "sa_2"
+        medium: "facebook"
+        subtype: "page"
+        username: "Copper Still"
+      }
+      {
+        id: "sa_3"
+        medium: "twitter"
+        username: "@ArcadiaRoofing"
+      }
+      {
+        id: "sa_4"
+        medium: "facebook"
+        subtype: "page"
+        username: "Arcadia Roofing"
+      }
+    ]
+    text: "Happy National Nonsense Holiday to everyone!"
   }
   {
     id: "post_5"
     calendarId: "cal_2"
     scheduledAt: (->
-      unix = moment.tz("2021-01-16 17:00","America/New_York").unix()
+      unix = moment.tz("2021-02-24 17:00","America/New_York").unix()
       unix
     )()
     zone: "America/New_York"
-    targets: [{
-      id: "sa_1"
-      medium: "twitter"
-      username: "@SimplibuzzTech"
-    }]
-    text: "Test post to calendar 2 at 5EST Jan 16"
+    targets: [
+      {
+        id: "sa_1"
+        medium: "twitter"
+        username: "@CopperStill"
+      }
+      {
+        id: "sa_2"
+        medium: "facebook"
+        subtype: "page"
+        username: "Copper Still"
+      }
+    ]
+    text: "Test post to Copper Still calendar at 5EST Feb 24"
   }
 ]
 
@@ -103,6 +200,14 @@ eventMocks = [
   {
     id: "event_1"
     time: moment("2021-01-20 00:01").unix()
+    type: "notice"
+    summary: "FB login expires"
+    detail: "Your Facebook login credentials will expire on this day. Please renew them before then to ensure that your Facebook posts go out as scheduled."
+    warning: true
+  }
+  {
+    id: "event_1"
+    time: moment("2021-02-20 00:01").unix()
     type: "notice"
     summary: "FB login expires"
     detail: "Your Facebook login credentials will expire on this day. Please renew them before then to ensure that your Facebook posts go out as scheduled."
