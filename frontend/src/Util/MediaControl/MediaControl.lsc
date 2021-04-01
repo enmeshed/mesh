@@ -46,6 +46,9 @@ MediaModal({droppedDataUrl, setDroppedDataUrl}) ->
     r
   )
 
+  updateCanvas(): void ->
+    setCanvasDraw({layer: rootLayer})
+
   receivedDurl(durl): void -/>
     if not durl:
       setCanvasDraw({})
@@ -54,12 +57,18 @@ MediaModal({droppedDataUrl, setDroppedDataUrl}) ->
     image <- dataUrlToImage(durl)
     imageLayer.setImage(image)
     imageLayer.fit()
-    setCanvasDraw({ layer: rootLayer })
+    updateCanvas()
 
   onCanvasSizeChanged(dx, dy) ->
     rootLayer.setAspect(dx, dy)
     rootLayer.children[0].fit()
-    setCanvasDraw({ layer: rootLayer })
+    updateCanvas()
+
+  rotateImage(theta): void ->
+    layer = rootLayer.children[0]
+    layer.rotate(layer.theta + theta)
+    layer.fit()
+    updateCanvas()
 
   useEffect(
     ->
@@ -90,8 +99,10 @@ MediaModal({droppedDataUrl, setDroppedDataUrl}) ->
     }}
   >
     <ModalHeader>Add Image</ModalHeader>
-    <ModalBody style={{display: 'flex', flex: '1', position: 'relative'}}>
+    <ModalBody style={{display: 'flex', flex: '1', position: 'relative', backgroundColor: '#CCCCCC'}}>
       <Canvas draw={canvasDraw} onSizeChanged={onCanvasSizeChanged} style={{width: '100%', height:'100%', position: 'absolute' }} />
+      <Button style={{position: 'absolute', left: 10, bottom: 10}} onClick={-> rotateImage(-(Math.PI/2))}>L</Button>
+      <Button style={{position: 'absolute', right: 10, bottom: 10}} onClick={-> rotateImage(Math.PI/2)}>R</Button>
     </ModalBody>
     <ModalFooter>
       <ModalButton kind="tertiary" onClick={onClose}>
