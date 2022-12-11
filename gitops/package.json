@@ -7,7 +7,7 @@
     "@enmeshed/protobuf": "^1.0.1",
     "kafkajs": "^1.12.0",
     "mysql2": "^2.1.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "@enmeshed/jaeger-client": "^3.18.0",
     "ioredis": "^4.17.3",
     "@elastic/elasticsearch": "^7.8.0",
